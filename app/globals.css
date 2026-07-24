@@ -163,6 +163,18 @@ summary::-webkit-details-marker {
   }
 }
 
+.nav-dropdown {
+  transform: translate(-50%, 0.5rem);
+}
+
+.nav-menu:hover .nav-dropdown,
+.nav-menu:focus-within .nav-dropdown {
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .skip-link {
   position: fixed;
   top: 0.75rem;

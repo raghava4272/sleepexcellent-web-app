@@ -44,11 +44,15 @@ import {
 } from "@/lib/site-data";
 
 const navItems = [
-  { label: "Mattresses", href: "#mattresses" },
-  { label: "Sofas", href: "#sofas" },
-  { label: "Beds", href: "#beds" },
-  { label: "Interiors", href: "#interiors" },
-  { label: "About Us", href: "#about" },
+  {
+    label: "Mattresses",
+    href: "#mattresses",
+    submenu: mattressModels,
+  },
+  { label: "Sofas", href: "#sofas", submenu: sofaModels },
+  { label: "Beds", href: "#beds", submenu: bedModels },
+  { label: "Interiors", href: "#interiors", submenu: ceilingTypes },
+  { label: "About Us", href: "#about", submenu: null },
 ] as const;
 
 function Logo({ light = false }: { light?: boolean }) {
@@ -203,17 +207,72 @@ function SiteHeader() {
         >
           <Logo />
           <nav
-            className="hidden items-center gap-7 xl:flex"
+            className="hidden h-full items-center gap-7 xl:flex"
             aria-label="Primary navigation"
           >
             {navItems.map((item) => (
-              <a
+              <div
                 key={item.href}
-                href={item.href}
-                className="nav-link relative py-4 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-charcoal outline-none transition-colors hover:text-burgundy focus-visible:text-burgundy"
+                className="nav-menu relative flex h-full items-center"
               >
-                {item.label}
-              </a>
+                <a
+                  href={item.href}
+                  className="nav-link relative py-4 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-charcoal outline-none transition-colors hover:text-burgundy focus-visible:text-burgundy"
+                >
+                  {item.label}
+                </a>
+                {item.submenu && (
+                  <div
+                    className="nav-dropdown pointer-events-none invisible absolute left-1/2 top-full z-[60] w-[min(920px,88vw)] pt-2 opacity-0 transition-all duration-200"
+                    aria-label={`${item.label} categories`}
+                  >
+                    <div className="border border-border bg-ivory px-8 py-7 shadow-[0_24px_70px_rgba(36,35,33,0.16)]">
+                      <div className="mb-5 flex items-end justify-between gap-6 border-b border-border pb-4">
+                        <div>
+                          <span className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-burgundy">
+                            Explore collection
+                          </span>
+                          <p className="mt-1 font-serif text-3xl text-charcoal">
+                            {item.label}
+                          </p>
+                        </div>
+                        <a
+                          href={item.href}
+                          className="inline-flex min-h-11 items-center gap-2 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-charcoal transition-colors hover:text-burgundy"
+                        >
+                          View all
+                          <ArrowRight size={14} />
+                        </a>
+                      </div>
+                      <ul
+                        className={
+                          item.submenu.length > 10
+                            ? "grid grid-cols-4 gap-x-8"
+                            : "grid grid-cols-2 gap-x-10"
+                        }
+                      >
+                        {item.submenu.map((model, index) => (
+                          <li key={model}>
+                            <a
+                              href={item.href}
+                              className="group/item flex min-h-10 items-center gap-3 border-b border-border/80 py-2.5 text-[0.74rem] leading-5 text-muted transition-colors hover:text-burgundy"
+                            >
+                              <span className="w-5 shrink-0 text-[0.55rem] font-bold tracking-[0.1em] text-burgundy/70">
+                                {String(index + 1).padStart(2, "0")}
+                              </span>
+                              <span className="flex-1">{model}</span>
+                              <ArrowRight
+                                size={12}
+                                className="shrink-0 opacity-0 transition-all group-hover/item:translate-x-0.5 group-hover/item:opacity-100"
+                              />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
           <div className="flex items-center gap-1 sm:gap-2">
@@ -874,8 +933,8 @@ function CeilingCollection() {
       aria-labelledby="interiors-title"
       className="scroll-mt-24 overflow-hidden bg-cream py-section"
     >
-      <div className="mx-auto grid max-w-site gap-10 px-page lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:gap-16 xl:gap-24">
-        <Reveal className="relative aspect-[4/3] min-h-[430px] overflow-hidden lg:min-h-[720px]">
+      <div className="mx-auto grid max-w-site gap-10 px-page lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-14 xl:gap-20">
+        <Reveal className="relative aspect-[4/3] w-full min-w-0 overflow-hidden lg:aspect-auto lg:h-[720px]">
           <Image
             unoptimized
             src={media.interior}
@@ -886,7 +945,7 @@ function CeilingCollection() {
           />
           <div className="absolute inset-5 border border-white/45" />
         </Reveal>
-        <Reveal>
+        <Reveal className="relative z-10 w-full min-w-0 lg:pl-2">
           <SectionLabel>Interior solutions</SectionLabel>
           <h2
             id="interiors-title"
