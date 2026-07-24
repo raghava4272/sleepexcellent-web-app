@@ -15,9 +15,134 @@ export const media = {
   sofa: "/photos/sofas.jpeg",
   bed: "/photos/padding beds.jpeg",
   interior: "/photos/interior.jpeg",
+  mattressVideo: "/videos/mattress.mp4",
   sofaVideo: "/videos/sofa.mp4",
   bedVideo: "/videos/bed.mp4",
 } as const;
+
+export type Product = {
+  id: string;
+  name: string;
+  category: "Beds" | "Sofas";
+  price: number;
+  image: string;
+  alt: string;
+};
+
+export const products: Product[] = [
+  {
+    id: "1000151957",
+    name: "Heritage Carved Bed — 1000151957",
+    category: "Beds",
+    price: 58990,
+    image: "/products/1000151957.png",
+    alt: "Heritage carved wooden bed with burgundy upholstered headboard",
+  },
+  {
+    id: "1000151960",
+    name: "Heritage Upholstered Bed — 1000151960",
+    category: "Beds",
+    price: 56990,
+    image: "/products/1000151960.png",
+    alt: "Close view of the upholstered heritage bed craftsmanship",
+  },
+  {
+    id: "1000151961",
+    name: "Panel Headboard Bed — 1000151961",
+    category: "Beds",
+    price: 54990,
+    image: "/products/1000151961.png",
+    alt: "Upholstered panel headboard bed in walnut and taupe",
+  },
+  {
+    id: "1000151962",
+    name: "Lift Storage Bed — 1000151962",
+    category: "Beds",
+    price: 64990,
+    image: "/products/1000151962.png",
+    alt: "Walnut lift storage bed with upholstered headboard",
+  },
+  {
+    id: "1000151963",
+    name: "Classic Storage Bed — 1000151963",
+    category: "Beds",
+    price: 62990,
+    image: "/products/1000151963.png",
+    alt: "Classic walnut storage bed with tufted headboard",
+  },
+  {
+    id: "1000151964",
+    name: "Grand Tufted Bed — 1000151964",
+    category: "Beds",
+    price: 59990,
+    image: "/products/1000151964.png",
+    alt: "Grand walnut bed with a taupe button-tufted headboard",
+  },
+  {
+    id: "1000151965",
+    name: "Regency Sofa — 1000151965",
+    category: "Sofas",
+    price: 48990,
+    image: "/products/1000151965.png",
+    alt: "Blue regency three-seater sofa with damask upholstery",
+  },
+  {
+    id: "1000151966",
+    name: "Regency Carved Sofa — 1000151966",
+    category: "Sofas",
+    price: 45990,
+    image: "/products/1000151966.png",
+    alt: "Carved wood detail on a blue regency sofa",
+  },
+  {
+    id: "1000151967",
+    name: "Regency Curve Sofa — 1000151967",
+    category: "Sofas",
+    price: 47990,
+    image: "/products/1000151967.png",
+    alt: "Curved back view of a blue damask regency sofa",
+  },
+  {
+    id: "1000151968",
+    name: "Regency Lounge Sofa — 1000151968",
+    category: "Sofas",
+    price: 49990,
+    image: "/products/1000151968.png",
+    alt: "Angled back view of a blue damask lounge sofa",
+  },
+  {
+    id: "1000151969",
+    name: "Regency Chester Sofa — 1000151969",
+    category: "Sofas",
+    price: 52990,
+    image: "/products/1000151969.png",
+    alt: "Blue damask Chester-style three-seater sofa",
+  },
+  {
+    id: "1000151970",
+    name: "Regency Grande Sofa — 1000151970",
+    category: "Sofas",
+    price: 54990,
+    image: "/products/1000151970.png",
+    alt: "Blue damask grand sofa in a warm wood-panelled room",
+  },
+  {
+    id: "1000151971",
+    name: "Olive Accent Sofa — 1000151971",
+    category: "Sofas",
+    price: 36990,
+    image: "/products/1000151971.png",
+    alt: "Side view of a modern olive velvet sofa",
+  },
+  {
+    id: "1000151972",
+    name: "Olive Luxe Sofa — 1000151972",
+    category: "Sofas",
+    price: 42990,
+    image: "/products/1000151972.png",
+    alt: "Modern olive velvet two-seater sofa with brass legs",
+  },
+];
 
 export type Category = {
   eyebrow: string;

@@ -14,17 +14,21 @@ import {
   Mail,
   Menu,
   MessageCircle,
+  Minus,
   Phone,
   Play,
+  Plus,
   Search,
   ShoppingBag,
   ThumbsUp,
+  Trash2,
   UserRound,
   X,
 } from "lucide-react";
 import Image from "next/image";
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -38,9 +42,11 @@ import {
   mattressModels,
   media,
   principles,
+  products,
   sofaModels,
   testimonials,
   type Category,
+  type Product,
 } from "@/lib/site-data";
 
 const navItems = [
@@ -52,6 +58,7 @@ const navItems = [
   { label: "Sofas", href: "#sofas", submenu: sofaModels },
   { label: "Beds", href: "#beds", submenu: bedModels },
   { label: "Interiors", href: "#interiors", submenu: ceilingTypes },
+  { label: "Shop", href: "#products", submenu: null },
   { label: "About Us", href: "#about", submenu: null },
 ] as const;
 
@@ -175,7 +182,13 @@ function TopContactBar() {
   );
 }
 
-function SiteHeader() {
+function SiteHeader({
+  cartCount,
+  onCartOpen,
+}: {
+  cartCount: number;
+  onCartOpen: () => void;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -292,10 +305,18 @@ function SiteHeader() {
             </button>
             <button
               type="button"
-              aria-label="Shopping bag (coming soon)"
-              className="icon-button"
+              aria-label={`Open shopping cart with ${cartCount} ${
+                cartCount === 1 ? "item" : "items"
+              }`}
+              className="icon-button relative"
+              onClick={onCartOpen}
             >
               <ShoppingBag size={18} strokeWidth={1.6} />
+              {cartCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-burgundy px-1 text-[0.58rem] font-bold leading-none text-white">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
             </button>
             <span
               aria-hidden="true"
@@ -374,6 +395,13 @@ function SiteHeader() {
                 </details>
                 <a
                   className="flex min-h-14 items-center border-b border-border py-4 text-xs font-bold uppercase tracking-[0.2em]"
+                  href="#products"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Shop Products
+                </a>
+                <a
+                  className="flex min-h-14 items-center border-b border-border py-4 text-xs font-bold uppercase tracking-[0.2em]"
                   href="#about"
                   onClick={() => setMenuOpen(false)}
                 >
@@ -419,6 +447,31 @@ function SiteHeader() {
 
 function HeroSection() {
   const reduceMotion = useReducedMotion();
+  const [heroSlide, setHeroSlide] = useState(0);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const activeHeroSlide = reduceMotion ? 1 : heroSlide;
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const timeout = window.setTimeout(() => {
+      setHeroSlide((current) => (current === 0 ? 1 : 0));
+    }, 6500);
+    return () => window.clearTimeout(timeout);
+  }, [heroSlide, reduceMotion]);
+
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video) return;
+
+    if (activeHeroSlide === 0) {
+      void video.play().catch(() => {
+        // The mattress poster remains visible if autoplay is unavailable.
+      });
+    } else {
+      video.pause();
+    }
+  }, [activeHeroSlide]);
+
   const heroItems = {
     hidden: { opacity: 0, y: 18 },
     show: (index: number) => ({
@@ -437,15 +490,37 @@ function HeroSection() {
       aria-labelledby="hero-title"
       className="relative min-h-[660px] overflow-hidden bg-charcoal sm:min-h-[700px] lg:h-[calc(100svh-92px)] lg:min-h-[680px] lg:max-h-[940px]"
     >
-      <Image
-        unoptimized
-        src={media.mattress}
-        alt="Premium SleepExcellent mattress collection in a refined bedroom"
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-[61%_center] sm:object-[58%_center] lg:object-center"
-      />
+      <div className="absolute inset-0">
+        <Image
+          unoptimized
+          src={media.mattress}
+          alt="Premium SleepExcellent mattress collection in a refined bedroom"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[61%_center] sm:object-[58%_center] lg:object-center"
+        />
+        {!reduceMotion && (
+          <video
+            ref={heroVideoRef}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={media.mattress}
+            aria-hidden="true"
+            tabIndex={-1}
+            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ${
+              activeHeroSlide === 0 ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <source src={media.mattressVideo} type="video/mp4" />
+            Your browser does not support this background video. The mattress
+            image remains available as a fallback.
+          </video>
+        )}
+      </div>
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,22,20,0.86)_0%,rgba(24,22,20,0.66)_42%,rgba(24,22,20,0.12)_78%)] max-sm:bg-[linear-gradient(90deg,rgba(24,22,20,0.83)_0%,rgba(24,22,20,0.6)_70%,rgba(24,22,20,0.28)_100%)]" />
       <div className="absolute inset-0 bg-gradient-to-t from-charcoal/50 via-transparent to-transparent" />
       <div className="relative mx-auto flex h-full min-h-[660px] max-w-site items-end px-page pb-20 pt-24 sm:min-h-[700px] sm:items-center sm:pb-16 lg:min-h-[680px]">
@@ -519,6 +594,32 @@ function HeroSection() {
           <ChevronDown size={16} />
         </span>
       </a>
+      {!reduceMotion && (
+        <div
+          className="absolute bottom-7 left-page z-10 hidden items-center gap-2 sm:flex"
+          aria-label="Hero slideshow controls"
+        >
+          {["Mattress film", "Mattress collection image"].map(
+            (label, index) => (
+              <button
+                key={label}
+                type="button"
+                aria-label={`Show ${label.toLowerCase()}`}
+                aria-current={activeHeroSlide === index ? "true" : undefined}
+                className={`flex h-9 items-center gap-2 border px-3 text-[0.58rem] font-bold uppercase tracking-[0.16em] text-white transition-colors ${
+                  activeHeroSlide === index
+                    ? "border-white/65 bg-white/15"
+                    : "border-white/25 bg-black/10 hover:border-white/55"
+                }`}
+                onClick={() => setHeroSlide(index)}
+              >
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <span className="hidden md:inline">{label}</span>
+              </button>
+            ),
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -650,6 +751,350 @@ function CategoryShowcase() {
         </div>
       </div>
     </section>
+  );
+}
+
+type CartLine = {
+  product: Product;
+  quantity: number;
+};
+
+const priceFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+function ProductCard({
+  product,
+  onAdd,
+  onBuy,
+}: {
+  product: Product;
+  onAdd: (product: Product) => void;
+  onBuy: (product: Product) => void;
+}) {
+  return (
+    <article className="group flex min-w-0 flex-col border border-border bg-ivory">
+      <div className="relative aspect-[11/7] overflow-hidden bg-cream">
+        <Image
+          unoptimized
+          src={product.image}
+          alt={product.alt}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          className="object-cover transition-transform duration-700 group-hover:scale-[1.025]"
+        />
+        <span className="absolute left-4 top-4 bg-ivory/95 px-3 py-2 text-[0.58rem] font-bold uppercase tracking-[0.18em] text-burgundy backdrop-blur-sm">
+          {product.category}
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
+        <p className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-muted">
+          Product {product.id}
+        </p>
+        <h3 className="mt-2 min-h-[3.4rem] font-serif text-[1.65rem] leading-[1.04] text-charcoal">
+          {product.name}
+        </h3>
+        <p className="mt-4 text-lg font-semibold text-charcoal">
+          {priceFormatter.format(product.price)}
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            className="min-h-12 border border-charcoal px-3 text-[0.6rem] font-bold uppercase tracking-[0.13em] text-charcoal transition-colors hover:border-burgundy hover:bg-burgundy hover:text-white"
+            onClick={() => onAdd(product)}
+          >
+            Add to Cart
+          </button>
+          <button
+            type="button"
+            className="min-h-12 bg-charcoal px-3 text-[0.6rem] font-bold uppercase tracking-[0.13em] text-white transition-colors hover:bg-deep-burgundy"
+            onClick={() => onBuy(product)}
+          >
+            Buy Now
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function FeaturedProducts({
+  onAdd,
+  onBuy,
+}: {
+  onAdd: (product: Product) => void;
+  onBuy: (product: Product) => void;
+}) {
+  return (
+    <section
+      id="products"
+      aria-labelledby="products-title"
+      className="scroll-mt-24 bg-cream px-page py-section"
+    >
+      <div className="mx-auto max-w-site">
+        <Reveal className="mb-12 grid gap-6 border-b border-border pb-10 lg:grid-cols-[1fr_0.7fr] lg:items-end">
+          <div>
+            <SectionLabel>Shop our products</SectionLabel>
+            <h2
+              id="products-title"
+              className="max-w-3xl text-balance font-serif text-display text-charcoal"
+            >
+              Crafted pieces for considered homes.
+            </h2>
+          </div>
+          <p className="max-w-xl text-base leading-8 text-muted lg:justify-self-end">
+            Explore every bed and sofa design in our current product edit.
+            Prices shown are for the featured configuration; our team can help
+            with sizing, fabrics and finishes.
+          </p>
+        </Reveal>
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {products.map((product, index) => (
+            <Reveal key={product.id} delay={(index % 4) * 0.04}>
+              <ProductCard
+                product={product}
+                onAdd={onAdd}
+                onBuy={onBuy}
+              />
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CartDrawer({
+  open,
+  items,
+  onClose,
+  onQuantityChange,
+  onRemove,
+}: {
+  open: boolean;
+  items: CartLine[];
+  onClose: () => void;
+  onQuantityChange: (productId: string, change: number) => void;
+  onRemove: (productId: string) => void;
+}) {
+  const [checkoutMessage, setCheckoutMessage] = useState(false);
+  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
+  const subtotal = items.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0,
+  );
+
+  useEffect(() => {
+    if (!open) return;
+
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setCheckoutMessage(false);
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onClose]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.button
+            type="button"
+            aria-label="Close shopping cart"
+            className="fixed inset-0 z-[90] bg-charcoal/55 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setCheckoutMessage(false);
+              onClose();
+            }}
+          />
+          <motion.aside
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cart-title"
+            className="fixed right-0 top-0 z-[100] flex h-dvh w-full max-w-[520px] flex-col bg-ivory shadow-2xl"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="flex items-center justify-between border-b border-border px-5 py-5 sm:px-7">
+              <div>
+                <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-burgundy">
+                  Your selection
+                </p>
+                <h2
+                  id="cart-title"
+                  className="mt-1 font-serif text-3xl text-charcoal"
+                >
+                  Shopping Cart
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Close shopping cart"
+                onClick={() => {
+                  setCheckoutMessage(false);
+                  onClose();
+                }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+              {items.length === 0 ? (
+                <div className="flex min-h-[55vh] flex-col items-center justify-center text-center">
+                  <ShoppingBag
+                    size={36}
+                    strokeWidth={1.25}
+                    className="text-burgundy"
+                  />
+                  <h3 className="mt-5 font-serif text-3xl text-charcoal">
+                    Your cart is empty.
+                  </h3>
+                  <p className="mt-2 max-w-xs text-sm leading-6 text-muted">
+                    Add a featured bed or sofa to begin your selection.
+                  </p>
+                  <button
+                    type="button"
+                    className="text-link mt-6"
+                    onClick={() => {
+                      setCheckoutMessage(false);
+                      onClose();
+                    }}
+                  >
+                    Continue Shopping
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+              ) : (
+                <ul className="grid gap-5">
+                  {items.map(({ product, quantity }) => (
+                    <li
+                      key={product.id}
+                      className="grid grid-cols-[104px_1fr] gap-4 border-b border-border pb-5"
+                    >
+                      <div className="relative aspect-square overflow-hidden bg-cream">
+                        <Image
+                          unoptimized
+                          src={product.image}
+                          alt=""
+                          fill
+                          sizes="104px"
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[0.56rem] font-bold uppercase tracking-[0.16em] text-burgundy">
+                          {product.category}
+                        </p>
+                        <h3 className="mt-1 font-serif text-xl leading-tight text-charcoal">
+                          {product.name}
+                        </h3>
+                        <p className="mt-2 text-sm font-semibold text-charcoal">
+                          {priceFormatter.format(product.price)}
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                          <div
+                            className="flex items-center border border-border bg-white"
+                            aria-label={`Quantity for ${product.name}`}
+                          >
+                            <button
+                              type="button"
+                              className="flex h-10 w-10 items-center justify-center transition-colors hover:text-burgundy disabled:opacity-40"
+                              aria-label={`Decrease quantity of ${product.name}`}
+                              disabled={quantity === 1}
+                              onClick={() =>
+                                onQuantityChange(product.id, -1)
+                              }
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span
+                              className="min-w-8 text-center text-sm font-semibold"
+                              aria-live="polite"
+                            >
+                              {quantity}
+                            </span>
+                            <button
+                              type="button"
+                              className="flex h-10 w-10 items-center justify-center transition-colors hover:text-burgundy"
+                              aria-label={`Increase quantity of ${product.name}`}
+                              onClick={() =>
+                                onQuantityChange(product.id, 1)
+                              }
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            className="flex min-h-10 items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] text-muted transition-colors hover:text-burgundy"
+                            onClick={() => onRemove(product.id)}
+                          >
+                            <Trash2 size={14} />
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {items.length > 0 && (
+              <div className="border-t border-border bg-white px-5 py-5 sm:px-7">
+                <div className="flex items-end justify-between gap-5">
+                  <div>
+                    <p className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-muted">
+                      Subtotal · {itemCount} {itemCount === 1 ? "item" : "items"}
+                    </p>
+                    <p className="mt-1 font-serif text-3xl text-charcoal">
+                      {priceFormatter.format(subtotal)}
+                    </p>
+                  </div>
+                  <p className="max-w-[160px] text-right text-[0.65rem] leading-5 text-muted">
+                    Delivery and configuration confirmed during consultation.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="button-primary mt-5 w-full"
+                  onClick={() => setCheckoutMessage(true)}
+                >
+                  Continue to Checkout
+                  <ArrowRight size={16} />
+                </button>
+                {checkoutMessage && (
+                  <p
+                    className="mt-3 border border-burgundy/25 bg-cream px-4 py-3 text-center text-xs leading-5 text-muted"
+                    role="status"
+                  >
+                    Online checkout is coming soon. Your selection is ready for
+                    a SleepExcellent product consultation.
+                  </p>
+                )}
+              </div>
+            )}
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -1321,6 +1766,53 @@ function SiteFooter() {
 }
 
 export function HomePage() {
+  const [cartItems, setCartItems] = useState<CartLine[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cartAnnouncement, setCartAnnouncement] = useState("");
+
+  const cartCount = useMemo(
+    () => cartItems.reduce((total, item) => total + item.quantity, 0),
+    [cartItems],
+  );
+
+  const addToCart = (product: Product) => {
+    setCartItems((current) => {
+      const existing = current.find(
+        (item) => item.product.id === product.id,
+      );
+      if (existing) {
+        return current.map((item) =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        );
+      }
+      return [...current, { product, quantity: 1 }];
+    });
+    setCartAnnouncement(`${product.name} added to your cart.`);
+  };
+
+  const buyNow = (product: Product) => {
+    addToCart(product);
+    setCartOpen(true);
+  };
+
+  const updateQuantity = (productId: string, change: number) => {
+    setCartItems((current) =>
+      current.map((item) =>
+        item.product.id === productId
+          ? { ...item, quantity: Math.max(1, item.quantity + change) }
+          : item,
+      ),
+    );
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCartItems((current) =>
+      current.filter((item) => item.product.id !== productId),
+    );
+  };
+
   return (
     <>
       <a className="skip-link" href="#main-content">
@@ -1328,12 +1820,16 @@ export function HomePage() {
       </a>
       <div id="top">
         <TopContactBar />
-        <SiteHeader />
+        <SiteHeader
+          cartCount={cartCount}
+          onCartOpen={() => setCartOpen(true)}
+        />
       </div>
       <main id="main-content">
         <HeroSection />
         <BrandIntroduction />
         <CategoryShowcase />
+        <FeaturedProducts onAdd={addToCart} onBuy={buyNow} />
         <MattressCollection />
         <BenefitsSection />
         <SofaCollection />
@@ -1345,6 +1841,16 @@ export function HomePage() {
         <InspirationGallery />
       </main>
       <SiteFooter />
+      <CartDrawer
+        open={cartOpen}
+        items={cartItems}
+        onClose={() => setCartOpen(false)}
+        onQuantityChange={updateQuantity}
+        onRemove={removeFromCart}
+      />
+      <p className="sr-only" aria-live="polite">
+        {cartAnnouncement}
+      </p>
     </>
   );
 }
