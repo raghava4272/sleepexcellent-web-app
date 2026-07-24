@@ -594,32 +594,6 @@ function HeroSection() {
           <ChevronDown size={16} />
         </span>
       </a>
-      {!reduceMotion && (
-        <div
-          className="absolute bottom-7 left-page z-10 hidden items-center gap-2 sm:flex"
-          aria-label="Hero slideshow controls"
-        >
-          {["Mattress film", "Mattress collection image"].map(
-            (label, index) => (
-              <button
-                key={label}
-                type="button"
-                aria-label={`Show ${label.toLowerCase()}`}
-                aria-current={activeHeroSlide === index ? "true" : undefined}
-                className={`flex h-9 items-center gap-2 border px-3 text-[0.58rem] font-bold uppercase tracking-[0.16em] text-white transition-colors ${
-                  activeHeroSlide === index
-                    ? "border-white/65 bg-white/15"
-                    : "border-white/25 bg-black/10 hover:border-white/55"
-                }`}
-                onClick={() => setHeroSlide(index)}
-              >
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <span className="hidden md:inline">{label}</span>
-              </button>
-            ),
-          )}
-        </div>
-      )}
     </section>
   );
 }
