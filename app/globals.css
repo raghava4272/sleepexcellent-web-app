@@ -1,0 +1,207 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f4ee;
+  --foreground: #242321;
+}
+
+@theme {
+  --color-ivory: #f7f4ee;
+  --color-cream: #efe9df;
+  --color-charcoal: #242321;
+  --color-muted: #6e6963;
+  --color-burgundy: #8b3f46;
+  --color-deep-burgundy: #682d32;
+  --color-gold: #b59665;
+  --color-border: #ddd6cb;
+  --color-footer: #1f1e1c;
+
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+
+  --container-site: 85rem;
+
+  --spacing-page: clamp(1.25rem, 4.2vw, 4rem);
+  --spacing-section: clamp(5.5rem, 9vw, 9rem);
+
+  --text-display: clamp(3rem, 5.6vw, 5.65rem);
+  --text-display--line-height: 0.98;
+  --text-display--letter-spacing: -0.04em;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+a,
+button,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+summary {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-burgundy);
+  outline-offset: 4px;
+}
+
+::selection {
+  background: rgba(139, 63, 70, 0.2);
+  color: var(--color-charcoal);
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+@layer components {
+  .nav-link::after {
+    position: absolute;
+    right: 0;
+    bottom: 0.6rem;
+    left: 0;
+    height: 1px;
+    content: "";
+    background: var(--color-burgundy);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 280ms ease;
+  }
+
+  .nav-link:hover::after,
+  .nav-link:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .icon-button {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-charcoal transition-colors duration-200 hover:bg-cream hover:text-burgundy;
+  }
+
+  .icon-button-bordered {
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-full border border-border text-charcoal transition-colors;
+  }
+
+  .icon-button-bordered:disabled {
+    @apply cursor-default opacity-60;
+  }
+
+  .button-primary,
+  .button-ghost-light,
+  .button-light,
+  .button-outline-light {
+    @apply inline-flex min-h-12 items-center gap-2 px-6 py-3.5 text-center text-[0.67rem] font-bold uppercase tracking-[0.17em] outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-4;
+  }
+
+  .button-primary {
+    @apply justify-center bg-burgundy text-white hover:bg-deep-burgundy focus-visible:ring-burgundy;
+  }
+
+  .button-primary:hover svg {
+    transform: translateX(0.2rem);
+  }
+
+  .button-primary svg {
+    transition: transform 250ms ease;
+  }
+
+  .button-ghost-light {
+    @apply justify-center border border-white/50 text-white hover:border-white hover:bg-white hover:text-charcoal focus-visible:ring-white;
+  }
+
+  .button-light {
+    @apply bg-ivory text-charcoal hover:bg-white focus-visible:ring-white;
+  }
+
+  .button-outline-light {
+    @apply border border-white/45 text-white hover:border-white hover:bg-white hover:text-charcoal focus-visible:ring-white;
+  }
+
+  .text-link {
+    @apply inline-flex min-h-11 items-center gap-2 border-b border-burgundy/50 py-2 text-[0.67rem] font-bold uppercase tracking-[0.16em] text-charcoal transition-colors hover:border-burgundy hover:text-burgundy;
+  }
+
+  .text-link svg {
+    transition: transform 250ms ease;
+  }
+
+  .text-link:hover svg {
+    transform: translateX(0.25rem);
+  }
+
+  .footer-title {
+    @apply mb-6 text-[0.66rem] font-bold uppercase tracking-[0.2em] text-white;
+  }
+
+  .footer-links {
+    @apply grid gap-3 text-sm text-stone-400;
+  }
+
+  .footer-links a {
+    @apply inline-block py-0.5 transition-colors hover:text-white;
+  }
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  color: white;
+  background: var(--color-burgundy);
+  transform: translateY(-150%);
+  transition: transform 180ms ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (max-width: 639px) {
+  :root {
+    --spacing-section: 5rem;
+    --text-display: clamp(2.8rem, 14vw, 4.2rem);
+  }
+
+  .button-primary,
+  .button-ghost-light {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
