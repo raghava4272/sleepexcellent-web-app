@@ -1,98 +1,57 @@
-# vinext-starter
+# SleepExcellent
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+SleepExcellent is a premium ecommerce experience built with the standard
+Next.js App Router, TypeScript, Tailwind CSS, Framer Motion, and Lucide icons.
 
 ## Prerequisites
 
-- Node.js `>=22.13.0`
+- Node.js 22.13.0 or newer (the repository currently uses Node 22.23.2)
+- npm
 
-## Quick Start
+If you use fnm, run `fnm use` before installing or running.
 
-```bash
-npm install
-npm run dev
-npm run build
-```
+## Local Development
 
-This starter does not use `wrangler.jsonc`.
+1. Run `npm ci`.
+2. Run `npm run dev`.
+3. Open [http://localhost:3000](http://localhost:3000).
 
-## Included Shape
+## Validation
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- `npm start`
 
-## Workspace Auth Headers
+## Catalogue Database Setup (F002)
 
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
+Copy `.env.example` to a local untracked `.env.local` and provide the
+server-only non-production `DATABASE_URL`. Then run the reviewed migration and
+idempotent authoritative seed:
 
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
+- `npm run db:generate` — generate a new reviewed migration after schema changes.
+- `npm run db:migrate` — apply reviewed migrations.
+- `npm run db:seed` — insert/update the 44 supplied catalogue records by slug.
 
-Treat the full name as optional and fall back to email when it is absent:
+Do not place database credentials in browser-visible variables. Product media
+and availability are deliberately absent from the F002 seed until client input
+is authoritative.
 
-```tsx
-import { headers } from "next/headers";
+## Current Scope
 
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
+F001 provides the homepage and global navigation. F002 adds catalogue browsing,
+model-name search, category filters, approved sorting, and database migration/
+seed infrastructure. F003 adds persisted-catalogue product and ceiling detail
+routes with category-safe purchase/consultation presentation and a deliberate
+pending-media fallback. F004 adds a persistent browser cart for direct-purchase
+products and a separate Buy Now intent, while checkout, authentication, admin,
+and integrations remain implemented only in their separately approved feature
+stages.
 
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+Homepage media is stored in `public/photos` and `public/videos`. Authoritative
+catalogue product media uses the approved deterministic resolver. For Vercel,
+keep large product media in the public Supabase `product-media` bucket and set
+`NEXT_PUBLIC_PRODUCT_MEDIA_BASE_URL` only after uploading the approved objects;
+`DATABASE_URL` remains server-only. Canonical source folders and the temporary
+`public/media` mirror are intentionally Git-ignored.

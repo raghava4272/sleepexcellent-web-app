@@ -6,9 +6,11 @@
 
 - Project status: `ACTIVE`
 - Current phase: [PHASE-001](phases/PHASE-001.md)
-- Current state: `IMPLEMENTATION_PLANNING`
-- Current role: `TECH_LEAD`
-- Current feature: None
+- Current state: `FEATURE_COMPLETE`
+- Current role: `QA_ENGINEER`
+- Current feature: [F003 — Product Detail Experience](features/F003-product-detail-experience.md)
+- Last completed feature: [F003 — Product Detail Experience](features/F003-product-detail-experience.md)
+- Next planned feature: [F004 — Shopping Cart](features/F004-shopping-cart.md)
 
 ## Project-Level Documentation
 
@@ -16,7 +18,7 @@
 - [Project State](PROJECT.md)
 - [Approved Features](FEATURES.md)
 - [Current Phase](phases/PHASE-001.md)
-- [Proposed Implementation Plan](IMPLEMENTATION.md)
+- [Approved Implementation Plan](IMPLEMENTATION.md)
 
 ## Product and Feature Documentation
 
@@ -43,12 +45,14 @@
 - [Approved Routes and Interfaces](docs/architecture/ROUTES.md)
 - [Approved Integrations and Environment Strategy](docs/architecture/INTEGRATIONS.md)
 - [Architecture Review](docs/architecture/ARCHITECTURE-REVIEW.md)
+- [Codebase Map](docs/architecture/CODEBASE-MAP.md)
 - [Architecture Decisions](docs/adr/)
 - [ADR-001 — Standard Next.js App Router on Vercel](docs/adr/ADR-001-nextjs-vercel-modular-monolith.md)
 - [ADR-002 — Supabase PostgreSQL, Auth, and Storage with Drizzle](docs/adr/ADR-002-supabase-postgres-auth-storage-drizzle.md)
 - [ADR-003 — Server-Authoritative Commerce, Payment, and Idempotency](docs/adr/ADR-003-authoritative-commerce-payment-idempotency.md)
 - [ADR-004 — Identity, Authorization, and Public References](docs/adr/ADR-004-identity-authorization-public-references.md)
 - [Product → Tech Lead Handoff](handoffs/product-to-tech-lead.md)
+- [Tech Lead → Engineering Handoff](handoffs/tech-lead-to-engineering.md)
 - [Security](docs/security/)
 - [Runbooks](docs/runbooks/)
 - [Tests](tests/)

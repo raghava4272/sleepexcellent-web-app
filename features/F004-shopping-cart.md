@@ -5,7 +5,7 @@
 Feature ID: F004
 Phase: PHASE-001
 Priority: P0
-Status: APPROVED
+Status: FEATURE_COMPLETE
 Owner Role: PRODUCT_LEAD
 Approval Date: 2026-09-05
 
@@ -97,32 +97,43 @@ Proposed in `IMPLEMENTATION.md`, awaiting explicit approval. Application impleme
 
 ## Implementation Status
 
-Current state: NOT STARTED
-Summary: Approved product specification only; no application code changed.
+Current state: FEATURE_COMPLETE
+Summary: Independent QA passed the persistent normal cart and isolated Buy Now intent. F005 checkout/order creation remains unstarted and out of scope.
 
 ## Files Changed
 
 | File | Purpose |
 | ---- | ------- |
-| None | No implementation files have been changed for this feature. |
+| `components/cart-provider.tsx` | Versioned local persistent normal-cart store and separate session-scoped Buy Now intent, containing slugs/positive quantities only. |
+| `app/api/cart/products/route.ts` | Refreshes currently published direct-purchase catalogue display data for persisted cart lines. |
+| `components/home-page.tsx` | Global cart count and responsive drawer with quantity/remove/clear/empty/recovery states. |
+| `components/product-detail-page.tsx` | Connects direct-product Add to Cart and Buy Now controls; ceiling consultation controls remain excluded. |
+| `app/layout.tsx`, `lib/catalogue/repository.ts`, `app/globals.css` | Global provider, published direct-product read, and cart visual/accessibility treatment. |
+| `tests/cart.test.mjs` | F004 persistence, separation, exclusion, and recovery regression checks. |
 
 ## Developer Validation
 
 | Check | Result | Evidence / Notes |
 | ----- | ------ | ---------------- |
-| Not started | Pending | Implementation has not been authorized. |
+| Automated tests | Passed | `npm test` passed all 15 tests, including F004 cart coverage. |
+| Type/lint/build | Passed | `npm run typecheck`, `npm run lint`, and `npm run build` completed successfully. |
+| Browser checks | Passed | Desktop and 390px mobile review verified add/merge, quantity update, refresh persistence, Buy Now isolation, drawer controls, and ceiling CTA exclusion. |
 
 ## User Review
 
-Status: Not started
-Feedback: Not applicable
-Acceptance Date: Pending
+Status: Accepted
+Feedback: User manually reviewed and explicitly accepted F004 for independent QA.
+Acceptance Date: 2026-09-05
 
 ## QA Testing
 
 | Acceptance Criterion | Test | Result | Evidence |
 | -------------------- | ---- | ------ | -------- |
-| All | Pending implementation | Not run | Feature is not implemented. |
+| 1–4 | Cart identity/quantity, merge, remove, and intentional clear behavior | Passed | Static F004 regression coverage plus independent code review; browser retained existing test cart because browser-policy confirmation is required before local-data deletion. |
+| 5–7 | Persistence, current display pricing, non-authoritative browser state | Passed | Local browser navigation/refresh retained 4 then 5 merged items; provider stores only slug/quantity and `/api/cart/products` refreshes current published direct products. |
+| 8–10 | Buy Now isolation | Passed | Browser Buy Now status confirmed separate intent; normal cart remained unchanged. |
+| 11–13 | Ceiling/media/availability boundaries | Passed | Glass Ceiling exposed consultation only with zero Add to Cart/Buy Now controls; current cart contains no availability labels and uses the pending-media fallback. |
+| 14–15 | Recovery, responsive, accessibility, reduced motion | Passed | Empty/changed/loading/recoverable states reviewed; 390px drawer review verified close/subtotal/disabled F005 checkout; labelled controls/focus trap and reduced-motion branch verified. |
 
 ## AI Evals, When Applicable
 
@@ -132,10 +143,13 @@ Not applicable. This feature does not include AI behavior.
 
 - Product media mapping and initial availability are PENDING CLIENT INPUT but non-blocking.
 - Cross-device anonymous cart persistence is not included.
-- Final persistence and direct-checkout intent mechanisms await architecture planning.
+- The cart stores only identity/quantity and uses a current published catalogue read for presentation; F005 must perform authoritative server-side checkout-price revalidation.
+- Buy Now is safely stored as a separate direct-checkout intent. The actual checkout route, order creation, payment, and post-payment reconciliation are deferred to F005/F006.
 
 ## Change History
 
 | Date | Change | Reason | Approved By |
 | ---- | ------ | ------ | ----------- |
 | 2026-09-05 | Initial approved specification created with persistent-cart, direct Buy Now, revalidation, media, and availability rules. | Group B approval. | User |
+| 2026-09-05 | Implemented and developer-validated persistent cart and isolated Buy Now intent. | Explicit F004 implementation authorization. | Codex / Software Engineer |
+| 2026-09-05 | Independent acceptance testing passed; feature marked complete. | User acceptance followed by QA verification. | Codex / QA Engineer |

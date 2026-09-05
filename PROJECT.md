@@ -14,11 +14,11 @@ Status: ACTIVE
 ## Workflow
 
 Current Phase: PHASE-001
-Current State: IMPLEMENTATION_PLANNING
-Current Role: TECH_LEAD
-Current Feature: None
-Last Completed Feature: None
-Next Planned Feature: F001
+Current State: DEVELOPER_VALIDATION
+Current Role: SOFTWARE_ENGINEER
+Current Feature: F005
+Last Completed Feature: F004
+Next Planned Feature: F005
 Resume State: None
 
 ## Repository
@@ -34,21 +34,21 @@ Current Environment: development
 
 ## Last Session
 
-Last Action: The reusable AI Engineering OS documentation-synchronization policy was finalized and the proposed implementation plan was aligned with its mandatory pre-review documentation gate. No application implementation was started or authorized.
+Last Action: F005 implementation, additive order migration, RLS/grant verification, and live order idempotency validation completed. A separately approved F002/F003 client-media presentation revision now includes deterministic sofa/bed folder mappings and the explicit approved folder aliases, without touching F005 checkout/order behavior; local browser/lint/build validation remains in progress.
 
 ## Waiting For
 
-Explicit human approval or requested revision of `IMPLEMENTATION.md` before any application implementation begins.
+F005 developer validation: local Next.js route compilation, lint, and production build require completion before review.
 
 ## Next Action
 
-Review and decide the implementation plan. If approved, select F001 as the first active feature, create the Tech-Lead-to-Engineering handoff, and transition to `IMPLEMENTING_FEATURE`. Do not implement before that approval.
+Finish F005 local browser/lint/build validation, synchronize final evidence, then move to AWAITING_FEATURE_REVIEW. Do not begin F006.
 
 ## Blockers
 
-The initial authorized administrator, product media mappings, additional media, ceiling-specific images, authoritative availability, final service locations, and response-time expectations remain PENDING CLIENT INPUT but do not block architecture or Sunday MVP work. Final shipping rules, GST/tax treatment, invoice requirements, cancellation policy, return/refund policy, installation charges, transport charges, production email verification, authentication email-delivery policy, and final contact-consent/privacy wording remain PENDING CLIENT DECISION. Before implementation validation, align the local Node.js runtime with `>=22.13.0`.
+The supplied ceiling/mattress demo image folders now have deterministic local mappings, including the sole approved Bonnell/Bonnel alias; the supplied partner images are rendered unchanged in a homepage pre-footer section. `product_media`/Supabase Storage metadata remains PENDING F009. Authoritative availability remains PENDING CLIENT INPUT and non-blocking for F003. Final shipping rules, GST/tax treatment, invoice requirements, cancellation policy, return/refund policy, installation charges, transport charges, the SleepExcellent no-reply sending domain, selected production SMTP/email provider configuration, transactional business-notification recipient, and final contact-consent/privacy wording remain PENDING CLIENT/OWNER INPUT. Node.js 22.23.2 is available through the repository's fnm runtime pin. A stopped pre-existing local Next.js process plus a subsequent isolated webpack process are blocked in Node/Next startup before opening their ports; lint/build also exhibit the same local toolchain delay.
 
 ## Updated
 
-Date: 2026-09-05
-Updated By: Codex / Tech Lead
+Date: 2026-09-06
+Updated By: Codex / Software Engineer

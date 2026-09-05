@@ -7,14 +7,18 @@ Status: APPROVED
 | Route | Rendering/access | Purpose |
 | ----- | ---------------- | ------- |
 | `/` | Public server page + client islands | Existing homepage and global navigation |
-| `/catalogue` | Public server page | All published products; search/sort/category filter |
-| `/catalogue/[category]` | Public server page | Published category listing |
-| `/products/[slug]` | Public server page | Product/ceiling detail with category-safe CTAs |
-| `/checkout` | Dynamic/no-store | Cart or Buy Now review and India address form |
-| `/orders/[reference]/confirmation` | Dynamic/no-store; owner or two-hour guest-token protected | Verified immediate order confirmation |
+| `/catalogue` | Public dynamic server page | F002 all published products; bounded `q`, `category`, and `sort` query parameters drive search/sort/category filtering. |
+| `/api/catalogue/suggestions?q=…` | Public dynamic server route | F002 homepage type-ahead; returns at most six name/category suggestions from published persisted catalogue records only. |
+| `/catalogue/[category]` | Reserved | Not implemented in F002; category browsing uses the approved `/catalogue?category=…` interface. |
+| `/products/[slug]` | Public dynamic server page | F003/F004 published product/ceiling detail by stable slug. Direct categories add to a persistent cart or create a separate Buy Now intent; ceilings expose consultation only. Missing or unpublished slugs return safe not-found. |
+| `/api/cart/products?slugs=…` | Public dynamic server route | F004 bounded current published direct-product display lookup for cart lines; excludes ceilings and returns no media/availability assertion. |
+| `/checkout` | Dynamic/no-store | F005 cart or Buy Now review, server-derived quote, and India address form |
+| `/api/checkout/quote` | Dynamic/no-store | F005 published direct-product quote; accepts identity/quantity only and returns server-derived INR amounts |
+| `/orders/[reference]/confirmation` | Dynamic/no-store; owner or two-hour guest-token protected | F005 payment-pending immediate order view; F006 upgrades it to verified paid confirmation |
 | `/ceiling-enquiry` | Dynamic form | Guest enquiry with optional preselected ceiling slug |
 | `/ceiling-enquiry/confirmation` | Dynamic/no-store | Submission receipt; no public PII lookup |
 | `/login`, `/signup` | P1 dynamic Auth routes | Optional customer access |
+| `/auth/callback` | P1 dynamic/no-store Auth callback | Supported Supabase email-confirmation and Google OAuth return handling; safe intended-destination redirect only |
 | `/forgot-password` | P1 route/UI | Non-blocking password-reset surface |
 | `/account` | P1 authenticated/no-store | Minimal account overview |
 | `/account/orders` | P1 authenticated/no-store | Own order history |
@@ -49,9 +53,9 @@ Server behavior:
 - rejects ceilings and malformed quantities;
 - rebuilds prices/subtotal/shipping/total;
 - writes immutable order/item/address/contact snapshots transactionally;
-- creates/records a Razorpay test order for the stored total;
+- creates the payment-pending application order only; F006 later creates and records the Razorpay test order from the stored total;
 - issues a path-scoped, HttpOnly, two-hour guest-confirmation cookie when unauthenticated; deployed cookies are Secure and SameSite=Lax;
-- returns public order reference and public Razorpay Checkout fields.
+- returns the public order reference. No payment-provider field or paid-order email is produced by F005.
 
 Idempotent retry with the same key returns the existing compatible order result and never creates a second payable order.
 
@@ -66,10 +70,10 @@ Server behavior:
 - loads its stored provider order ID/amount;
 - compares identifiers without trusting browser order context;
 - verifies HMAC server-side using Razorpay key secret;
-- atomically marks the attempt verified and order paid once;
+- atomically marks the attempt verified and order paid once, creating durable customer-confirmation and business-notification delivery records only for that verified transition;
 - returns safe confirmation state.
 
-Invalid/mismatched/replayed data cannot create a paid transition.
+Invalid/mismatched/replayed data cannot create a paid transition or paid-order email. Server-side Resend delivery consumes the durable records only after `PAID`; a delivery failure is reported for recovery without changing the paid response/order state.
 
 ### `POST /api/webhooks/razorpay` — P1
 
@@ -86,7 +90,9 @@ Server behavior validates authoritative selection/optional positive area, snapsh
 
 ### Customer Auth/Account — P1
 
-- Signup/login/logout use Supabase Auth with supported cookie-based SSR handling.
+- Signup/login/logout use Supabase Auth with supported cookie-based SSR handling. Email/password signup invokes the supported required confirmation flow; an unverified login response offers safe resend/recovery and never creates a second account.
+- Google sign-in starts Supabase Google OAuth. Its supported callback creates/links the identity, exchanges/establishes the session, and returns to a validated in-app destination without redundant confirmation.
+- Confirmation/OAuth tokens and redirect validation stay inside the supported Supabase Auth flow. The callback treats expired/invalid links as a recoverable authentication state and never logs tokens or exposes provider credentials.
 - Account/order reads resolve the authenticated user on the server and enforce ownership.
 - Password reset route may remain incomplete P1 if email configuration is unavailable.
 

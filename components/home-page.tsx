@@ -7,20 +7,15 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import {
-  ArrowLeft,
   ArrowRight,
-  Camera,
   ChevronDown,
   Mail,
   Menu,
-  MessageCircle,
   Minus,
   Phone,
-  Play,
   Plus,
   Search,
   ShoppingBag,
-  ThumbsUp,
   Trash2,
   UserRound,
   X,
@@ -28,7 +23,6 @@ import {
 import Image from "next/image";
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -42,23 +36,23 @@ import {
   mattressModels,
   media,
   principles,
-  products,
   sofaModels,
-  testimonials,
   type Category,
-  type Product,
 } from "@/lib/site-data";
+import { useCart } from "@/components/cart-provider";
+import { formatInr } from "@/lib/catalogue/presentation";
+import type { CatalogueProduct } from "@/lib/catalogue/types";
 
 const navItems = [
   {
     label: "Mattresses",
-    href: "#mattresses",
+    href: "/catalogue?category=MATTRESS",
     submenu: mattressModels,
   },
-  { label: "Sofas", href: "#sofas", submenu: sofaModels },
-  { label: "Beds", href: "#beds", submenu: bedModels },
-  { label: "Interiors", href: "#interiors", submenu: ceilingTypes },
-  { label: "Shop", href: "#products", submenu: null },
+  { label: "Sofas", href: "/catalogue?category=SOFA", submenu: sofaModels },
+  { label: "Beds", href: "/catalogue?category=BED", submenu: bedModels },
+  { label: "Ceilings", href: "/catalogue?category=CEILING", submenu: ceilingTypes },
+  { label: "Shop", href: "/catalogue", submenu: null },
   { label: "About Us", href: "#about", submenu: null },
 ] as const;
 
@@ -142,6 +136,233 @@ function SectionLabel({
   );
 }
 
+function useDialogFocus<T extends HTMLElement>(
+  open: boolean,
+  onClose: () => void,
+) {
+  const dialogRef = useRef<T>(null);
+  const closeRef = useRef(onClose);
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const dialog = dialogRef.current;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const focusableSelector =
+      'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusable = () =>
+      Array.from(
+        dialog?.querySelectorAll<HTMLElement>(focusableSelector) ?? [],
+      ).filter((element) => !element.hasAttribute("hidden"));
+
+    window.requestAnimationFrame(() => focusable()[0]?.focus());
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const elements = focusable();
+      if (elements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
+    };
+  }, [open]);
+
+  return dialogRef;
+}
+
+type UtilityPanel = "search" | "account" | null;
+
+type SearchSuggestion = {
+  slug: string;
+  name: string;
+  category: string;
+};
+
+function UtilityDialog({
+  panel,
+  onClose,
+}: {
+  panel: UtilityPanel;
+  onClose: () => void;
+}) {
+  const open = panel !== null;
+  const dialogRef = useDialogFocus<HTMLElement>(open, onClose);
+  const isSearch = panel === "search";
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [suggestionState, setSuggestionState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+
+  const updateSearchQuery = (value: string) => {
+    setQuery(value);
+    if (!value.trim()) {
+      setSuggestions([]);
+      setSuggestionState("idle");
+      return;
+    }
+    setSuggestions([]);
+    setSuggestionState("loading");
+  };
+
+  useEffect(() => {
+    if (!isSearch || !query.trim()) return;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/catalogue/suggestions?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Catalogue suggestions are unavailable.");
+        const payload = await response.json() as { suggestions?: SearchSuggestion[] };
+        setSuggestions(payload.suggestions ?? []);
+        setSuggestionState("ready");
+      } catch {
+        if (controller.signal.aborted) return;
+        setSuggestions([]);
+        setSuggestionState("error");
+      }
+    }, 180);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [isSearch, query]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.button
+            type="button"
+            aria-label={`Close ${isSearch ? "search" : "account"} panel`}
+            className="fixed inset-0 z-[90] bg-charcoal/55 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+          <motion.aside
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="utility-dialog-title"
+            className="fixed inset-x-4 top-6 z-[100] mx-auto w-auto max-w-xl border border-border bg-ivory p-6 shadow-2xl sm:inset-x-8 sm:top-[12vh] sm:p-9"
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <p className="text-[0.62rem] font-bold uppercase tracking-[0.2em] text-burgundy">
+                  {isSearch ? "Collection search" : "Customer account"}
+                </p>
+                <h2
+                  id="utility-dialog-title"
+                  className="mt-2 font-serif text-4xl leading-none text-charcoal sm:text-5xl"
+                >
+                  {isSearch
+                    ? "Search the catalogue."
+                    : "Account access is being prepared."}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="icon-button -mr-2 -mt-2"
+                aria-label={`Close ${isSearch ? "search" : "account"} panel`}
+                onClick={onClose}
+              >
+                <X size={21} />
+              </button>
+            </div>
+            {isSearch ? (
+              <form action="/catalogue" className="mt-7">
+                <label className="relative block">
+                  <span className="sr-only">Search by product or model name</span>
+                  <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-burgundy" size={18} aria-hidden="true" />
+                  <input
+                    name="q"
+                    type="search"
+                    value={query}
+                    onChange={(event) => updateSearchQuery(event.target.value)}
+                    autoComplete="off"
+                    placeholder="Search by product or model name"
+                    aria-describedby="search-guidance"
+                    className="catalogue-input pl-11"
+                  />
+                </label>
+                <p id="search-guidance" className="mt-3 text-sm leading-6 text-muted">Suggestions use only supplied catalogue product and model names.</p>
+
+                {query.trim() && suggestionState === "loading" && <p role="status" className="mt-4 text-sm text-muted">Finding matching models…</p>}
+                {query.trim() && suggestionState === "error" && <p role="alert" className="mt-4 text-sm leading-6 text-burgundy">Suggestions are temporarily unavailable. You can still search the catalogue.</p>}
+                {suggestionState === "ready" && query.trim() && suggestions.length === 0 && <p role="status" className="mt-4 text-sm leading-6 text-muted">No matching models yet. Submit your search to view the catalogue.</p>}
+                {suggestions.length > 0 && (
+                  <ul aria-label="Matching catalogue models" className="mt-4 divide-y divide-border border border-border bg-white" role="listbox">
+                    {suggestions.map((suggestion) => (
+                      <li key={suggestion.slug} role="option" aria-selected="false">
+                        <a href={`/catalogue?q=${encodeURIComponent(suggestion.name)}`} onClick={onClose} className="flex min-h-12 items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-cream focus-visible:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-burgundy">
+                          <span className="font-medium text-charcoal">{suggestion.name}</span>
+                          <span className="shrink-0 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-burgundy">{suggestion.category}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                  <button type="submit" className="button-primary">
+                    Search catalogue <ArrowRight size={16} />
+                  </button>
+                  <a className="text-link" href="/catalogue" onClick={onClose}>Browse Collections</a>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p className="mt-6 max-w-lg text-sm leading-7 text-muted sm:text-base">Shopping remains open to guests. Customer sign-in and private order history will be added in their approved feature stage.</p>
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                  <a className="button-primary" href="#consultation" onClick={onClose}>Contact SleepExcellent <ArrowRight size={16} /></a>
+                  <button type="button" className="text-link" onClick={onClose}>Continue on Homepage</button>
+                </div>
+              </>
+            )}
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function TopContactBar() {
   return (
     <div className="bg-footer text-stone-200">
@@ -185,12 +406,19 @@ function TopContactBar() {
 function SiteHeader({
   cartCount,
   onCartOpen,
+  onSearchOpen,
+  onAccountOpen,
 }: {
   cartCount: number;
   onCartOpen: () => void;
+  onSearchOpen: () => void;
+  onAccountOpen: () => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useDialogFocus<HTMLElement>(menuOpen, () =>
+    setMenuOpen(false),
+  );
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -199,12 +427,10 @@ function SiteHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [menuOpen]);
+  const openFromMobileMenu = (openPanel: () => void) => {
+    setMenuOpen(false);
+    window.requestAnimationFrame(openPanel);
+  };
 
   return (
     <>
@@ -223,20 +449,30 @@ function SiteHeader({
             className="hidden h-full items-center gap-7 xl:flex"
             aria-label="Primary navigation"
           >
-            {navItems.map((item) => (
-              <div
-                key={item.href}
-                className="nav-menu relative flex h-full items-center"
-              >
-                <a
-                  href={item.href}
-                  className="nav-link relative py-4 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-charcoal outline-none transition-colors hover:text-burgundy focus-visible:text-burgundy"
+            {navItems.map((item, navIndex) =>
+              item.submenu ? (
+                <details
+                  key={item.href}
+                  className="nav-menu relative flex h-full items-center"
+                  onMouseEnter={(event) => event.currentTarget.setAttribute("open", "")}
+                  onMouseLeave={(event) => {
+                    if (!event.currentTarget.matches(":focus-within")) event.currentTarget.removeAttribute("open");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.currentTarget.removeAttribute("open");
+                      event.currentTarget.querySelector("summary")?.focus();
+                    }
+                  }}
                 >
-                  {item.label}
-                </a>
-                {item.submenu && (
+                  <summary className="nav-link relative flex cursor-pointer list-none items-center gap-1.5 py-4 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-charcoal outline-none transition-colors hover:text-burgundy focus-visible:text-burgundy">
+                    {item.label}
+                    <ChevronDown size={13} aria-hidden="true" />
+                  </summary>
                   <div
-                    className="nav-dropdown pointer-events-none invisible absolute left-1/2 top-full z-[60] w-[min(920px,88vw)] pt-2 opacity-0 transition-all duration-200"
+                    className={`nav-dropdown pointer-events-none invisible absolute left-1/2 top-full z-[60] w-[min(920px,88vw)] pt-2 opacity-0 transition-all duration-200 ${
+                      navIndex === 0 ? "nav-dropdown-start" : ""
+                    }`}
                     aria-label={`${item.label} categories`}
                   >
                     <div className="border border-border bg-ivory px-8 py-7 shadow-[0_24px_70px_rgba(36,35,33,0.16)]">
@@ -252,6 +488,11 @@ function SiteHeader({
                         <a
                           href={item.href}
                           className="inline-flex min-h-11 items-center gap-2 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-charcoal transition-colors hover:text-burgundy"
+                          onClick={(event) =>
+                            event.currentTarget
+                              .closest("details")
+                              ?.removeAttribute("open")
+                          }
                         >
                           View all
                           <ArrowRight size={14} />
@@ -269,6 +510,11 @@ function SiteHeader({
                             <a
                               href={item.href}
                               className="group/item flex min-h-10 items-center gap-3 border-b border-border/80 py-2.5 text-[0.74rem] leading-5 text-muted transition-colors hover:text-burgundy"
+                              onClick={(event) =>
+                                event.currentTarget
+                                  .closest("details")
+                                  ?.removeAttribute("open")
+                              }
                             >
                               <span className="w-5 shrink-0 text-[0.55rem] font-bold tracking-[0.1em] text-burgundy/70">
                                 {String(index + 1).padStart(2, "0")}
@@ -284,22 +530,34 @@ function SiteHeader({
                       </ul>
                     </div>
                   </div>
-                )}
-              </div>
-            ))}
+                </details>
+              ) : (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="nav-link relative flex h-full items-center py-4 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-charcoal outline-none transition-colors hover:text-burgundy focus-visible:text-burgundy"
+                >
+                  {item.label}
+                </a>
+              ),
+            )}
           </nav>
           <div className="flex items-center gap-1 sm:gap-2">
             <button
               type="button"
-              aria-label="Search (coming soon)"
+              aria-label="Open collection search information"
+              aria-haspopup="dialog"
               className="icon-button hidden sm:inline-flex"
+              onClick={onSearchOpen}
             >
               <Search size={18} strokeWidth={1.6} />
             </button>
             <button
               type="button"
-              aria-label="Account (coming soon)"
+              aria-label="Open customer account information"
+              aria-haspopup="dialog"
               className="icon-button hidden lg:inline-flex"
+              onClick={onAccountOpen}
             >
               <UserRound size={18} strokeWidth={1.6} />
             </button>
@@ -349,6 +607,7 @@ function SiteHeader({
               onClick={() => setMenuOpen(false)}
             />
             <motion.aside
+              ref={menuRef}
               id="mobile-menu"
               role="dialog"
               aria-modal="true"
@@ -371,7 +630,10 @@ function SiteHeader({
                 </button>
               </div>
 
-              <nav className="mt-7 flex-1" aria-label="Mobile navigation">
+              <nav
+                className="mt-7 flex-1 overflow-y-auto pr-1"
+                aria-label="Mobile navigation"
+              >
                 <details className="group border-b border-border py-4">
                   <summary className="flex cursor-pointer list-none items-center justify-between text-xs font-bold uppercase tracking-[0.2em]">
                     Collections
@@ -395,11 +657,35 @@ function SiteHeader({
                 </details>
                 <a
                   className="flex min-h-14 items-center border-b border-border py-4 text-xs font-bold uppercase tracking-[0.2em]"
-                  href="#products"
+              href="/catalogue"
                   onClick={() => setMenuOpen(false)}
                 >
-                  Shop Products
+                  Browse Collections
                 </a>
+                <button
+                  type="button"
+                  className="flex min-h-14 w-full items-center justify-between border-b border-border py-4 text-left text-xs font-bold uppercase tracking-[0.2em]"
+                  onClick={() => openFromMobileMenu(onSearchOpen)}
+                >
+                  Search
+                  <Search size={17} strokeWidth={1.6} />
+                </button>
+                <button
+                  type="button"
+                  className="flex min-h-14 w-full items-center justify-between border-b border-border py-4 text-left text-xs font-bold uppercase tracking-[0.2em]"
+                  onClick={() => openFromMobileMenu(onAccountOpen)}
+                >
+                  Account
+                  <UserRound size={17} strokeWidth={1.6} />
+                </button>
+                <button
+                  type="button"
+                  className="flex min-h-14 w-full items-center justify-between border-b border-border py-4 text-left text-xs font-bold uppercase tracking-[0.2em]"
+                  onClick={() => openFromMobileMenu(onCartOpen)}
+                >
+                  Cart
+                  <ShoppingBag size={17} strokeWidth={1.6} />
+                </button>
                 <a
                   className="flex min-h-14 items-center border-b border-border py-4 text-xs font-bold uppercase tracking-[0.2em]"
                   href="#about"
@@ -472,19 +758,6 @@ function HeroSection() {
     }
   }, [activeHeroSlide]);
 
-  const heroItems = {
-    hidden: { opacity: 0, y: 18 },
-    show: (index: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: reduceMotion ? 0 : 0.12 + index * 0.1,
-        duration: reduceMotion ? 0 : 0.6,
-        ease: [0.22, 1, 0.36, 1] as const,
-      },
-    }),
-  };
-
   return (
     <section
       aria-labelledby="hero-title"
@@ -492,7 +765,6 @@ function HeroSection() {
     >
       <div className="absolute inset-0">
         <Image
-          unoptimized
           src={media.mattress}
           alt="Premium SleepExcellent mattress collection in a refined bedroom"
           fill
@@ -526,10 +798,7 @@ function HeroSection() {
       <div className="relative mx-auto flex h-full min-h-[660px] max-w-site items-end px-page pb-20 pt-24 sm:min-h-[700px] sm:items-center sm:pb-16 lg:min-h-[680px]">
         <div className="max-w-[730px] text-white">
           <motion.div
-            custom={0}
-            initial={reduceMotion ? false : "hidden"}
-            animate="show"
-            variants={heroItems}
+            initial={false}
             className="mb-6 flex items-center gap-3 text-[0.68rem] font-bold uppercase tracking-[0.26em] text-stone-200"
           >
             <span className="h-px w-9 bg-burgundy" />
@@ -537,33 +806,23 @@ function HeroSection() {
           </motion.div>
           <motion.h1
             id="hero-title"
-            custom={1}
-            initial={reduceMotion ? false : "hidden"}
-            animate="show"
-            variants={heroItems}
+            initial={false}
             className="text-balance font-serif text-[clamp(3.3rem,7vw,6.85rem)] leading-[0.88] tracking-[-0.045em]"
           >
             Comfort, crafted to elevate every room.
           </motion.h1>
           <motion.p
-            custom={2}
-            initial={reduceMotion ? false : "hidden"}
-            animate="show"
-            variants={heroItems}
+            initial={false}
             className="mt-7 max-w-[640px] text-[0.98rem] leading-7 text-stone-200 sm:text-lg sm:leading-8"
           >
-            Discover premium mattresses, beautifully designed sofas,
-            handcrafted beds and refined ceiling solutions created for modern
-            living.
+            Browse the current SleepExcellent mattress, sofa, bed and ceiling
+            collections, then contact the team for product guidance.
           </motion.p>
           <motion.div
-            custom={3}
-            initial={reduceMotion ? false : "hidden"}
-            animate="show"
-            variants={heroItems}
+            initial={false}
             className="mt-9 flex flex-col gap-3 sm:flex-row"
           >
-            <a className="button-primary" href="#collections">
+            <a className="button-primary" href="/catalogue">
               Explore Collections
               <ArrowRight size={17} />
             </a>
@@ -572,10 +831,7 @@ function HeroSection() {
             </a>
           </motion.div>
           <motion.a
-            custom={4}
-            initial={reduceMotion ? false : "hidden"}
-            animate="show"
-            variants={heroItems}
+            initial={false}
             className="mt-6 inline-flex items-center gap-2 text-xs tracking-[0.04em] text-stone-300 transition-colors hover:text-white"
             href={contact.primaryPhoneHref}
           >
@@ -620,11 +876,10 @@ function BrandIntroduction() {
           Premium comfort, from your bedroom to your interiors.
         </h2>
         <p className="mx-auto mt-7 max-w-[780px] text-pretty text-base leading-8 text-muted sm:text-lg">
-          At SleepExcellent, every product combines thoughtful design,
-          dependable materials and carefully considered comfort. From
-          supportive mattresses to statement furniture and elegant ceiling
-          finishes, our collections are designed to make everyday spaces feel
-          exceptional.
+          Explore the current SleepExcellent catalogue across mattresses,
+          sofas, beds and ceiling options. Every collection keeps its supplied
+          model names visible and provides a direct route to the team for
+          product guidance.
         </p>
       </Reveal>
     </section>
@@ -645,7 +900,6 @@ function CategoryCard({
         className="group relative block h-full min-h-[480px] overflow-hidden bg-charcoal outline-none focus-visible:ring-2 focus-visible:ring-burgundy focus-visible:ring-offset-4 sm:min-h-[540px]"
       >
         <Image
-          unoptimized
           src={category.image}
           alt={category.alt}
           fill
@@ -728,155 +982,41 @@ function CategoryShowcase() {
   );
 }
 
-type CartLine = {
-  product: Product;
-  quantity: number;
-};
-
-const priceFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
-
-function ProductCard({
-  product,
-  onAdd,
-  onBuy,
-}: {
-  product: Product;
-  onAdd: (product: Product) => void;
-  onBuy: (product: Product) => void;
-}) {
-  return (
-    <article className="group flex min-w-0 flex-col border border-border bg-ivory">
-      <div className="relative aspect-[11/7] overflow-hidden bg-cream">
-        <Image
-          unoptimized
-          src={product.image}
-          alt={product.alt}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          className="object-cover transition-transform duration-700 group-hover:scale-[1.025]"
-        />
-        <span className="absolute left-4 top-4 bg-ivory/95 px-3 py-2 text-[0.58rem] font-bold uppercase tracking-[0.18em] text-burgundy backdrop-blur-sm">
-          {product.category}
-        </span>
-      </div>
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <p className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-muted">
-          Product {product.id}
-        </p>
-        <h3 className="mt-2 min-h-[3.4rem] font-serif text-[1.65rem] leading-[1.04] text-charcoal">
-          {product.name}
-        </h3>
-        <p className="mt-4 text-lg font-semibold text-charcoal">
-          {priceFormatter.format(product.price)}
-        </p>
-        <div className="mt-6 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            className="min-h-12 border border-charcoal px-3 text-[0.6rem] font-bold uppercase tracking-[0.13em] text-charcoal transition-colors hover:border-burgundy hover:bg-burgundy hover:text-white"
-            onClick={() => onAdd(product)}
-          >
-            Add to Cart
-          </button>
-          <button
-            type="button"
-            className="min-h-12 bg-charcoal px-3 text-[0.6rem] font-bold uppercase tracking-[0.13em] text-white transition-colors hover:bg-deep-burgundy"
-            onClick={() => onBuy(product)}
-          >
-            Buy Now
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function FeaturedProducts({
-  onAdd,
-  onBuy,
-}: {
-  onAdd: (product: Product) => void;
-  onBuy: (product: Product) => void;
-}) {
-  return (
-    <section
-      id="products"
-      aria-labelledby="products-title"
-      className="scroll-mt-24 bg-cream px-page py-section"
-    >
-      <div className="mx-auto max-w-site">
-        <Reveal className="mb-12 grid gap-6 border-b border-border pb-10 lg:grid-cols-[1fr_0.7fr] lg:items-end">
-          <div>
-            <SectionLabel>Shop our products</SectionLabel>
-            <h2
-              id="products-title"
-              className="max-w-3xl text-balance font-serif text-display text-charcoal"
-            >
-              Crafted pieces for considered homes.
-            </h2>
-          </div>
-          <p className="max-w-xl text-base leading-8 text-muted lg:justify-self-end">
-            Explore every bed and sofa design in our current product edit.
-            Prices shown are for the featured configuration; our team can help
-            with sizing, fabrics and finishes.
-          </p>
-        </Reveal>
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {products.map((product, index) => (
-            <Reveal key={product.id} delay={(index % 4) * 0.04}>
-              <ProductCard
-                product={product}
-                onAdd={onAdd}
-                onBuy={onBuy}
-              />
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function CartDrawer({
   open,
-  items,
   onClose,
-  onQuantityChange,
-  onRemove,
 }: {
   open: boolean;
-  items: CartLine[];
   onClose: () => void;
-  onQuantityChange: (productId: string, change: number) => void;
-  onRemove: (productId: string) => void;
 }) {
-  const [checkoutMessage, setCheckoutMessage] = useState(false);
-  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
-  const subtotal = items.reduce(
-    (total, item) => total + item.product.price * item.quantity,
-    0,
-  );
+  const dialogRef = useDialogFocus<HTMLElement>(open, onClose);
+  const reduceMotion = useReducedMotion();
+  const cart = useCart();
+  const [products, setProducts] = useState<CatalogueProduct[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !cart.hydrated) return;
+    if (!cart.lines.length) {
+      queueMicrotask(() => { setProducts([]); setError(false); });
+      return;
+    }
+    const controller = new AbortController();
+    queueMicrotask(() => { setLoading(true); setError(false); });
+    fetch(`/api/cart/products?slugs=${encodeURIComponent(cart.lines.map((line) => line.slug).join(","))}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Cart product lookup failed");
+        const payload = await response.json() as { products: CatalogueProduct[] };
+        setProducts(payload.products);
+      })
+      .catch((reason: unknown) => { if ((reason as { name?: string }).name !== "AbortError") setError(true); })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [cart.hydrated, cart.lines, open]);
 
-    document.body.style.overflow = "hidden";
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setCheckoutMessage(false);
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
+  const bySlug = new Map(products.map((product) => [product.slug, product]));
+  const subtotal = cart.lines.reduce((sum, line) => sum + ((bySlug.get(line.slug)?.fixedPriceMinor ?? 0) * line.quantity), 0);
 
   return (
     <AnimatePresence>
@@ -886,23 +1026,21 @@ function CartDrawer({
             type="button"
             aria-label="Close shopping cart"
             className="fixed inset-0 z-[90] bg-charcoal/55 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => {
-              setCheckoutMessage(false);
-              onClose();
-            }}
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={reduceMotion ? undefined : { opacity: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0 }}
+            onClick={onClose}
           />
           <motion.aside
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="cart-title"
             className="fixed right-0 top-0 z-[100] flex h-dvh w-full max-w-[520px] flex-col bg-ivory shadow-2xl"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+            initial={reduceMotion ? false : { x: "100%" }}
+            animate={reduceMotion ? undefined : { x: 0 }}
+            exit={reduceMotion ? undefined : { x: "100%" }}
+            transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="flex items-center justify-between border-b border-border px-5 py-5 sm:px-7">
               <div>
@@ -920,149 +1058,39 @@ function CartDrawer({
                 type="button"
                 className="icon-button"
                 aria-label="Close shopping cart"
-                onClick={() => {
-                  setCheckoutMessage(false);
-                  onClose();
-                }}
+                onClick={onClose}
               >
                 <X size={22} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7">
-              {items.length === 0 ? (
-                <div className="flex min-h-[55vh] flex-col items-center justify-center text-center">
-                  <ShoppingBag
-                    size={36}
-                    strokeWidth={1.25}
-                    className="text-burgundy"
-                  />
-                  <h3 className="mt-5 font-serif text-3xl text-charcoal">
-                    Your cart is empty.
-                  </h3>
-                  <p className="mt-2 max-w-xs text-sm leading-6 text-muted">
-                    Add a featured bed or sofa to begin your selection.
-                  </p>
-                  <button
-                    type="button"
-                    className="text-link mt-6"
-                    onClick={() => {
-                      setCheckoutMessage(false);
-                      onClose();
-                    }}
-                  >
-                    Continue Shopping
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
-              ) : (
-                <ul className="grid gap-5">
-                  {items.map(({ product, quantity }) => (
-                    <li
-                      key={product.id}
-                      className="grid grid-cols-[104px_1fr] gap-4 border-b border-border pb-5"
-                    >
-                      <div className="relative aspect-square overflow-hidden bg-cream">
-                        <Image
-                          unoptimized
-                          src={product.image}
-                          alt=""
-                          fill
-                          sizes="104px"
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[0.56rem] font-bold uppercase tracking-[0.16em] text-burgundy">
-                          {product.category}
-                        </p>
-                        <h3 className="mt-1 font-serif text-xl leading-tight text-charcoal">
-                          {product.name}
-                        </h3>
-                        <p className="mt-2 text-sm font-semibold text-charcoal">
-                          {priceFormatter.format(product.price)}
-                        </p>
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                          <div
-                            className="flex items-center border border-border bg-white"
-                            aria-label={`Quantity for ${product.name}`}
-                          >
-                            <button
-                              type="button"
-                              className="flex h-10 w-10 items-center justify-center transition-colors hover:text-burgundy disabled:opacity-40"
-                              aria-label={`Decrease quantity of ${product.name}`}
-                              disabled={quantity === 1}
-                              onClick={() =>
-                                onQuantityChange(product.id, -1)
-                              }
-                            >
-                              <Minus size={14} />
-                            </button>
-                            <span
-                              className="min-w-8 text-center text-sm font-semibold"
-                              aria-live="polite"
-                            >
-                              {quantity}
-                            </span>
-                            <button
-                              type="button"
-                              className="flex h-10 w-10 items-center justify-center transition-colors hover:text-burgundy"
-                              aria-label={`Increase quantity of ${product.name}`}
-                              onClick={() =>
-                                onQuantityChange(product.id, 1)
-                              }
-                            >
-                              <Plus size={14} />
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            className="flex min-h-10 items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] text-muted transition-colors hover:text-burgundy"
-                            onClick={() => onRemove(product.id)}
-                          >
-                            <Trash2 size={14} />
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {items.length > 0 && (
-              <div className="border-t border-border bg-white px-5 py-5 sm:px-7">
-                <div className="flex items-end justify-between gap-5">
-                  <div>
-                    <p className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-muted">
-                      Subtotal · {itemCount} {itemCount === 1 ? "item" : "items"}
-                    </p>
-                    <p className="mt-1 font-serif text-3xl text-charcoal">
-                      {priceFormatter.format(subtotal)}
-                    </p>
+            {!cart.hydrated || loading ? (
+              <div className="flex flex-1 items-center justify-center px-7 text-center" aria-live="polite"><p className="text-sm text-muted">Refreshing your saved selection…</p></div>
+            ) : !cart.lines.length ? (
+              <div className="flex flex-1 flex-col items-center justify-center px-7 py-12 text-center">
+                <span className="flex h-20 w-20 items-center justify-center rounded-full border border-burgundy/20 bg-cream text-burgundy"><ShoppingBag size={32} strokeWidth={1.25} aria-hidden="true" /></span>
+                <h3 className="mt-6 font-serif text-4xl text-charcoal">Begin with something exceptional.</h3>
+                <p className="mt-3 max-w-sm text-sm leading-7 text-muted">Your cart stays with you as you explore the SleepExcellent collection.</p>
+                <a href="/catalogue" className="button-primary mt-8" onClick={onClose}>Browse Collections <ArrowRight size={16} /></a>
+              </div>
+            ) : error ? (
+              <div className="flex flex-1 flex-col items-center justify-center px-7 text-center"><h3 className="font-serif text-4xl text-charcoal">Your selection is saved.</h3><p className="mt-3 max-w-sm text-sm leading-7 text-muted">Current catalogue details could not be refreshed. Please close and try again.</p></div>
+            ) : (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+                  <p className="text-xs leading-5 text-muted">{cart.itemCount} {cart.itemCount === 1 ? "item" : "items"} in your persistent cart. Final prices refresh before checkout.</p>
+                  <div className="mt-5 divide-y divide-border border-y border-border">
+                    {cart.lines.map((line) => {
+                      const product = bySlug.get(line.slug);
+                      if (!product) return <div key={line.slug} className="py-5"><p className="font-semibold text-charcoal">This product is no longer available in the current catalogue.</p><button type="button" className="text-link mt-2" onClick={() => cart.removeItem(line.slug)}>Remove item <Trash2 size={14} aria-hidden="true" /></button></div>;
+                      const category = product.category === "MATTRESS" ? "Mattresses" : `${product.category.slice(0, 1)}${product.category.slice(1).toLowerCase()}s`;
+                      return <div key={line.slug} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-4 py-5"><div className="cart-line-fallback" aria-label="Product media pending client mapping">{product.name.slice(0, 1)}</div><div className="min-w-0"><p className="text-[0.58rem] font-bold uppercase tracking-[0.16em] text-burgundy">{category}</p><p className="mt-1 font-serif text-2xl leading-none text-charcoal">{product.name}</p>{product.configuration && <p className="mt-2 text-xs leading-5 text-muted">{product.configuration}</p>}<p className="mt-3 text-sm font-semibold text-charcoal">{formatInr(product.fixedPriceMinor ?? 0)}</p><div className="mt-4 flex items-center justify-between gap-3"><div className="inline-flex min-h-10 items-center border border-border bg-ivory"><button type="button" className="cart-quantity-button" aria-label={`Decrease quantity for ${product.name}`} disabled={line.quantity === 1} onClick={() => cart.setQuantity(line.slug, line.quantity - 1)}><Minus size={14} aria-hidden="true" /></button><output className="flex min-w-9 justify-center text-sm font-semibold" aria-live="polite">{line.quantity}</output><button type="button" className="cart-quantity-button" aria-label={`Increase quantity for ${product.name}`} onClick={() => cart.setQuantity(line.slug, line.quantity + 1)}><Plus size={14} aria-hidden="true" /></button></div><p className="text-sm font-semibold text-charcoal">{formatInr((product.fixedPriceMinor ?? 0) * line.quantity)}</p></div><button type="button" className="text-link mt-3" onClick={() => cart.removeItem(line.slug)}>Remove <Trash2 size={14} aria-hidden="true" /></button></div></div>;
+                    })}
                   </div>
-                  <p className="max-w-[160px] text-right text-[0.65rem] leading-5 text-muted">
-                    Delivery and configuration confirmed during consultation.
-                  </p>
+                  {cart.storageError && <p className="detail-action-notice mt-5">This browser may not retain the cart after it closes. Your current selection is still available now.</p>}
+                  {cart.buyNowIntent && <p className="mt-5 text-xs leading-5 text-muted">A separate Buy Now selection is ready and has not changed this normal cart.</p>}
                 </div>
-                <button
-                  type="button"
-                  className="button-primary mt-5 w-full"
-                  onClick={() => setCheckoutMessage(true)}
-                >
-                  Continue to Checkout
-                  <ArrowRight size={16} />
-                </button>
-                {checkoutMessage && (
-                  <p
-                    className="mt-3 border border-burgundy/25 bg-cream px-4 py-3 text-center text-xs leading-5 text-muted"
-                    role="status"
-                  >
-                    Online checkout is coming soon. Your selection is ready for
-                    a SleepExcellent product consultation.
-                  </p>
-                )}
+                <div className="border-t border-border bg-cream/55 px-5 py-5 sm:px-7"><div className="flex items-end justify-between gap-4"><div><p className="text-[0.58rem] font-bold uppercase tracking-[0.16em] text-muted">Subtotal</p><p className="mt-1 text-xs text-muted">Final pricing is revalidated at checkout.</p></div><p className="font-serif text-3xl text-charcoal">{formatInr(subtotal)}</p></div>{bySlug.size === cart.lines.length ? <a href="/checkout" className="button-primary mt-5 w-full" onClick={onClose}>Continue to checkout <ArrowRight size={16} /></a> : <button type="button" className="button-secondary mt-5 w-full opacity-60" disabled>Review unavailable items</button>}<p className="mt-3 text-center text-xs leading-5 text-muted">The server rebuilds every price and total before creating an order.</p><button type="button" className="text-link mt-3" onClick={() => { if (window.confirm("Clear every item from your cart?")) cart.clearCart(); }}>Clear Cart <Trash2 size={14} aria-hidden="true" /></button></div>
               </div>
             )}
           </motion.aside>
@@ -1139,7 +1167,6 @@ function EditorialVideo({
     >
       {reduceMotion ? (
         <Image
-          unoptimized
           src={posterSrc}
           alt={alt}
           fill
@@ -1187,7 +1214,6 @@ function MattressCollection() {
       <div className="mx-auto grid max-w-site gap-10 px-page lg:grid-cols-2 lg:items-center lg:gap-16 xl:gap-24">
         <Reveal className="relative min-h-[470px] overflow-hidden sm:min-h-[600px] lg:min-h-[760px]">
           <Image
-            unoptimized
             src={media.mattress}
             alt="Premium SleepExcellent mattress collection"
             fill
@@ -1198,7 +1224,7 @@ function MattressCollection() {
           <div className="absolute bottom-7 left-7 bg-white/94 px-5 py-4 backdrop-blur sm:bottom-9 sm:left-9">
             <span className="block font-serif text-3xl text-charcoal">10</span>
             <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-muted">
-              Comfort profiles
+              Listed models
             </span>
           </div>
         </Reveal>
@@ -1211,9 +1237,9 @@ function MattressCollection() {
             Find the comfort that fits you.
           </h2>
           <p className="mt-6 max-w-xl text-base leading-7 text-muted">
-            From firm orthopaedic support to responsive latex and
-            pressure-relieving memory foam, explore mattresses designed for
-            different bodies, lifestyles and sleeping preferences.
+            Compare the ten listed mattress models, including orthopaedic,
+            latex, spring, foam and memory-foam options in their supplied
+            catalogue sizes.
           </p>
           <div className="mt-8">
             <ModelList models={mattressModels} />
@@ -1277,9 +1303,8 @@ function SofaCollection() {
             Seating designed around the way you live.
           </h2>
           <p className="mt-6 max-w-xl text-base leading-7 text-muted">
-            Explore compact statement sofas, expansive family configurations
-            and timeless silhouettes designed to combine visual character with
-            lasting comfort.
+            Browse all sixteen listed sofa models and review the supplied
+            configurations before contacting the SleepExcellent team.
           </p>
           <div className="mt-8">
             <ModelList models={sofaModels} />
@@ -1329,8 +1354,8 @@ function BedCollection() {
             Beds that make the room feel complete.
           </h2>
           <p className="mt-6 text-base leading-7 text-muted">
-            Discover expressive headboards, warm wood finishes and timeless
-            forms designed to create an inviting bedroom centrepiece.
+            Browse all ten listed bed models, including the supplied headboard,
+            teak, plywood and lifestyle options.
           </p>
           <div className="mt-8">
             <ModelList models={bedModels} />
@@ -1355,7 +1380,6 @@ function CeilingCollection() {
       <div className="mx-auto grid max-w-site gap-10 px-page lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-14 xl:gap-20">
         <Reveal className="relative aspect-[4/3] w-full min-w-0 overflow-hidden lg:aspect-auto lg:h-[720px]">
           <Image
-            unoptimized
             src={media.interior}
             alt="SleepExcellent decorative ceiling interior"
             fill
@@ -1415,14 +1439,13 @@ function BrandStory() {
               id="story-title"
               className="text-balance font-serif text-display text-charcoal"
             >
-              Considered design. Dependable comfort.
+              Four collections, clearly presented.
             </h2>
           </div>
           <p className="max-w-2xl text-base leading-8 text-muted lg:justify-self-end lg:text-lg">
-            We believe premium living begins with products that feel as good as
-            they look. Our collections bring together thoughtful proportions,
-            practical comfort and finishes selected to complement contemporary
-            Indian homes.
+            Move between the current catalogue collections, review their
+            authoritative model names, and use the confirmed contact details
+            when you are ready to discuss a selection.
           </p>
         </Reveal>
         <div className="grid lg:grid-cols-3">
@@ -1497,75 +1520,6 @@ function ConsultationBanner() {
   );
 }
 
-function Testimonials() {
-  return (
-    <section
-      aria-labelledby="testimonials-title"
-      className="bg-cream px-page py-section"
-    >
-      <div className="mx-auto max-w-site">
-        <Reveal className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <SectionLabel>Customer experiences</SectionLabel>
-            <h2
-              id="testimonials-title"
-              className="font-serif text-display text-charcoal"
-            >
-              Comfort people notice.
-            </h2>
-          </div>
-          <div className="flex gap-2" aria-label="Testimonial controls">
-            <button
-              type="button"
-              disabled
-              aria-label="Previous testimonial"
-              className="icon-button-bordered"
-            >
-              <ArrowLeft size={17} />
-            </button>
-            <button
-              type="button"
-              disabled
-              aria-label="Next testimonial"
-              className="icon-button-bordered"
-            >
-              <ArrowRight size={17} />
-            </button>
-          </div>
-        </Reveal>
-        <div className="mt-12 grid gap-5 lg:grid-cols-[1.35fr_0.82fr_0.82fr]">
-          {testimonials.map((testimonial, index) => (
-            <Reveal
-              key={testimonial.label}
-              delay={index * 0.07}
-              className={`border border-border bg-ivory p-7 sm:p-9 ${
-                index === 0 ? "lg:p-12" : ""
-              }`}
-            >
-              <span
-                aria-hidden="true"
-                className="block h-12 font-serif text-7xl leading-none text-burgundy/35"
-              >
-                “
-              </span>
-              <blockquote
-                className={`mt-4 font-serif leading-snug text-charcoal ${
-                  index === 0 ? "text-3xl sm:text-4xl" : "text-2xl"
-                }`}
-              >
-                {testimonial.quote}
-              </blockquote>
-              <p className="mt-8 border-t border-border pt-5 text-[0.67rem] font-bold uppercase tracking-[0.17em] text-muted">
-                {testimonial.label}
-              </p>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function InspirationGallery() {
   return (
     <section
@@ -1580,7 +1534,7 @@ function InspirationGallery() {
           >
             Inspiration for better spaces.
           </h2>
-          <a className="text-link" href="#collections">
+          <a className="text-link" href="/catalogue">
             Explore Our Collections
             <ArrowRight size={16} />
           </a>
@@ -1597,7 +1551,6 @@ function InspirationGallery() {
               }`}
             >
               <Image
-                unoptimized
                 src={category.image}
                 alt={`${category.alt} inspiration`}
                 fill
@@ -1626,36 +1579,58 @@ function InspirationGallery() {
   );
 }
 
-function SiteFooter() {
-  const socialLinks = [
-    { label: "Instagram", icon: Camera },
-    { label: "Facebook", icon: ThumbsUp },
-    { label: "YouTube", icon: Play },
-    { label: "WhatsApp", icon: MessageCircle },
-  ] as const;
+function PartnersSection() {
+  const partners = [
+    {
+      src: "/photos/partners/Ceo-pratap_reddy_snapareddy.jpg",
+      designation: "CEO",
+      name: "Pratap Reddy Snapareddy",
+    },
+    {
+      src: "/photos/partners/Managing_director_Merva_Obaiah.jpg",
+      designation: "Managing Director",
+      name: "Merva Obaiah",
+    },
+  ];
 
+  return (
+    <section aria-labelledby="partners-title" className="bg-ivory px-page py-section">
+      <div className="mx-auto max-w-site">
+        <Reveal className="mb-10 max-w-2xl sm:mb-14">
+          <SectionLabel>SleepExcellent</SectionLabel>
+          <h2 id="partners-title" className="font-serif text-display text-charcoal">Meet the Partners</h2>
+        </Reveal>
+        <div className="grid gap-5 lg:grid-cols-2 lg:gap-7">
+          {partners.map((partner, index) => (
+            <Reveal key={partner.src} delay={index * 0.08}>
+              <div className="group border border-border bg-white p-3 shadow-[0_18px_55px_rgba(36,35,33,0.05)] sm:p-4">
+                <div className="relative aspect-[1.64/1] overflow-hidden bg-cream">
+                  <Image src={partner.src} alt={`${partner.name}, ${partner.designation}`} fill sizes="(min-width: 1024px) 42vw, 100vw" className="object-contain transition-transform duration-500 group-hover:scale-[1.012]" />
+                </div>
+                <div className="px-1 pb-1 pt-5 sm:px-2 sm:pt-6">
+                  <p className="text-[0.61rem] font-bold uppercase tracking-[0.2em] text-burgundy">{partner.designation}</p>
+                  <h3 className="mt-2 font-serif text-3xl leading-none tracking-[-0.03em] text-charcoal sm:text-4xl">{partner.name}</h3>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SiteFooter() {
   return (
     <footer className="bg-footer px-page text-stone-300">
       <div className="mx-auto max-w-site py-16 sm:py-20">
-        <div className="grid gap-11 border-b border-white/10 pb-14 sm:grid-cols-2 lg:grid-cols-[1.35fr_0.75fr_0.85fr_1.1fr] lg:gap-14">
+        <div className="grid gap-11 border-b border-white/10 pb-14 sm:grid-cols-2 lg:grid-cols-[1.35fr_0.75fr_0.75fr_1.1fr] lg:gap-14">
           <div>
             <Logo light />
             <p className="mt-7 max-w-sm text-sm leading-7 text-stone-400">
-              Premium mattresses, thoughtfully designed furniture and refined
-              interior solutions for modern homes.
+              Browse the SleepExcellent mattress, sofa, bed and ceiling
+              collections, then contact the team for product guidance.
             </p>
-            <div className="mt-7 flex gap-2">
-              {socialLinks.map(({ label, icon: Icon }) => (
-                <a
-                  key={label}
-                  href="#"
-                  aria-label={label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 transition-colors hover:border-burgundy hover:bg-burgundy hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-burgundy"
-                >
-                  <Icon size={16} strokeWidth={1.6} />
-                </a>
-              ))}
-            </div>
           </div>
           <div>
             <h3 className="footer-title">Collections</h3>
@@ -1677,12 +1652,6 @@ function SiteFooter() {
                 <a href="#consultation">Product Guidance</a>
               </li>
               <li>
-                <a href="#consultation">Care Information</a>
-              </li>
-              <li>
-                <a href="#consultation">Frequently Asked Questions</a>
-              </li>
-              <li>
                 <a href="#consultation">Contact Us</a>
               </li>
             </ul>
@@ -1694,45 +1663,28 @@ function SiteFooter() {
                 className="group flex items-start gap-3 transition-colors hover:text-white"
                 href={contact.primaryPhoneHref}
               >
-                <Phone
-                  size={16}
-                  className="mt-0.5 shrink-0 text-burgundy"
-                />
+                <Phone size={16} className="mt-0.5 shrink-0 text-burgundy" />
                 {contact.primaryPhoneDisplay}
               </a>
               <a
                 className="group flex items-start gap-3 transition-colors hover:text-white"
                 href={contact.secondaryPhoneHref}
               >
-                <Phone
-                  size={16}
-                  className="mt-0.5 shrink-0 text-burgundy"
-                />
+                <Phone size={16} className="mt-0.5 shrink-0 text-burgundy" />
                 {contact.secondaryPhoneDisplay}
               </a>
               <a
                 className="group flex items-start gap-3 break-all transition-colors hover:text-white"
                 href={contact.emailHref}
               >
-                <Mail
-                  size={16}
-                  className="mt-0.5 shrink-0 text-burgundy"
-                />
+                <Mail size={16} className="mt-0.5 shrink-0 text-burgundy" />
                 {contact.email}
               </a>
             </div>
           </div>
         </div>
-        <div className="flex flex-col gap-4 pt-7 text-[0.68rem] text-stone-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="pt-7 text-[0.68rem] text-stone-500">
           <p>© 2026 SleepExcellent. All rights reserved.</p>
-          <div className="flex gap-6">
-            <a className="transition-colors hover:text-stone-300" href="#">
-              Privacy Policy
-            </a>
-            <a className="transition-colors hover:text-stone-300" href="#">
-              Terms &amp; Conditions
-            </a>
-          </div>
         </div>
       </div>
     </footer>
@@ -1740,52 +1692,9 @@ function SiteFooter() {
 }
 
 export function HomePage() {
-  const [cartItems, setCartItems] = useState<CartLine[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [cartAnnouncement, setCartAnnouncement] = useState("");
-
-  const cartCount = useMemo(
-    () => cartItems.reduce((total, item) => total + item.quantity, 0),
-    [cartItems],
-  );
-
-  const addToCart = (product: Product) => {
-    setCartItems((current) => {
-      const existing = current.find(
-        (item) => item.product.id === product.id,
-      );
-      if (existing) {
-        return current.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        );
-      }
-      return [...current, { product, quantity: 1 }];
-    });
-    setCartAnnouncement(`${product.name} added to your cart.`);
-  };
-
-  const buyNow = (product: Product) => {
-    addToCart(product);
-    setCartOpen(true);
-  };
-
-  const updateQuantity = (productId: string, change: number) => {
-    setCartItems((current) =>
-      current.map((item) =>
-        item.product.id === productId
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item,
-      ),
-    );
-  };
-
-  const removeFromCart = (productId: string) => {
-    setCartItems((current) =>
-      current.filter((item) => item.product.id !== productId),
-    );
-  };
+  const [utilityPanel, setUtilityPanel] = useState<UtilityPanel>(null);
+  const { itemCount } = useCart();
 
   return (
     <>
@@ -1795,15 +1704,16 @@ export function HomePage() {
       <div id="top">
         <TopContactBar />
         <SiteHeader
-          cartCount={cartCount}
+          cartCount={itemCount}
           onCartOpen={() => setCartOpen(true)}
+          onSearchOpen={() => setUtilityPanel("search")}
+          onAccountOpen={() => setUtilityPanel("account")}
         />
       </div>
       <main id="main-content">
         <HeroSection />
         <BrandIntroduction />
         <CategoryShowcase />
-        <FeaturedProducts onAdd={addToCart} onBuy={buyNow} />
         <MattressCollection />
         <BenefitsSection />
         <SofaCollection />
@@ -1811,20 +1721,12 @@ export function HomePage() {
         <CeilingCollection />
         <BrandStory />
         <ConsultationBanner />
-        <Testimonials />
         <InspirationGallery />
+        <PartnersSection />
       </main>
       <SiteFooter />
-      <CartDrawer
-        open={cartOpen}
-        items={cartItems}
-        onClose={() => setCartOpen(false)}
-        onQuantityChange={updateQuantity}
-        onRemove={removeFromCart}
-      />
-      <p className="sr-only" aria-live="polite">
-        {cartAnnouncement}
-      </p>
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <UtilityDialog panel={utilityPanel} onClose={() => setUtilityPanel(null)} />
     </>
   );
 }

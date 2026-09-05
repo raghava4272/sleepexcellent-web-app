@@ -44,6 +44,11 @@ As a shopper or authorized administrator, I can use every included Sunday MVP jo
 27. Sunday acceptance requires a working Vercel preview after approved migration, clearly labelled development/demonstration rather than production-ready.
 28. Live Razorpay, final domain, GST/tax, shipping provider, refunds/cancellations, legal policies, advanced monitoring, production email, final media, and additional production hardening remain follow-up work where applicable.
 29. During later implementation/validation, materially affected project documentation stays synchronized with actual code without generating unnecessary documents; code remains the implementation source of truth.
+30. The existing SleepExcellent homepage is the primary visual baseline for every new client-facing surface; approved specifications define behavior, `REFERENCE-ANALYSIS.md` supplies UX patterns, and reference websites remain inspiration only.
+31. Client-facing work maintains a coherent premium design system across typography, colour, spacing, content width, section rhythm, buttons, cards, forms, shadows, icons, motion, and responsive behavior rather than assembling unrelated templates.
+32. Important interactions include intentional applicable default, hover, focus, pressed, disabled, loading, success, and error states, and major journeys avoid raw framework-looking loading/empty/error experiences.
+33. Every client-facing developer-validation pass includes an explicit visual/interaction review; obvious UI regressions block transition to `AWAITING_FEATURE_REVIEW` even when technical checks pass.
+34. Reference-site branding, wording, product names, media, icons, proprietary content, exact layouts, and exact styling are never copied.
 
 Traceability: explicitly approved by the user on 2026-09-05 as “Approve F1 — MVP Experience Quality and Release Acceptance,” with registration as F011 and the specified priority, journey, quality, security, validation, Node, Vercel, and documentation adjustments.
 
@@ -68,6 +73,8 @@ Traceability: explicitly approved by the user on 2026-09-05 as “Approve F1 —
 17. Critical journeys have no severe runtime console error, clearly avoid preventable page-blocking/client-bundle excess, and retain working image/video fallbacks.
 18. A working Vercel preview is clearly identified as development/demonstration and does not claim production readiness.
 19. Implemented behavior and material project documentation agree, while incomplete P1 and production follow-up work remains explicitly recorded.
+20. Client-facing journeys remain visually consistent with SleepExcellent, use relevant approved reference-analysis patterns, feel premium at representative mobile/tablet/laptop/desktop widths, and do not appear copied from Sleepwell or Wakefit.
+21. Visual review finds no obvious regression in spacing, typography, hierarchy, CTA visibility, interaction feedback, missing-media presentation, touch usability, or accessibility basics.
 
 ## Out of Scope
 
@@ -102,13 +109,18 @@ Traceability: explicitly approved by the user on 2026-09-05 as “Approve F1 —
 | 2026-09-05 | Require focused automation plus browser validation. | Explicit validation approval. | Type, lint, high-risk tests, build, and representative browser evidence gate preview acceptance. |
 | 2026-09-05 | Require Node `>=22.13.0` and a demonstration-only Vercel preview. | Explicit environment/release adjustment. | Runtime mismatch must be resolved before final checks, and preview cannot imply production readiness. |
 | 2026-09-05 | Close Product Lead discovery after F001–F011 audit and authorize Tech Lead handoff. | Explicit workflow authorization. | Discovery advances to architecture planning without implementation permission. |
+| 2026-09-05 | Make premium UI/UX and reference-analysis use explicit cross-cutting release guidance. | Documentation clarification. | Every relevant client-facing developer-validation pass now includes a blocking visual/interaction review without changing feature scope or priority. |
 
 ## Design References
 
-- Existing approved SleepExcellent homepage and media.
-- `docs/product/CLIENT-BRIEF.md`
-- `docs/product/REFERENCE-ANALYSIS.md`
-- Approved feature specifications F001–F010.
+Design authority, in order:
+
+1. Existing approved SleepExcellent homepage and media.
+2. Approved feature specifications F001–F010.
+3. `docs/product/REFERENCE-ANALYSIS.md` for approved ecommerce UX patterns.
+4. Reference websites for inspiration only.
+
+`docs/product/CLIENT-BRIEF.md` remains supporting project truth. A feature specification overrides the reference analysis if they conflict.
 
 ## Architecture References
 
@@ -163,3 +175,4 @@ Not applicable. The approved project contains no AI product behavior.
 | Date | Change | Reason | Approved By |
 | ---- | ------ | ------ | ----------- |
 | 2026-09-05 | Initial approved specification created with priority-aware release gates, P0 journeys, accessibility, security, automated/browser validation, and preview boundaries. | Group F approval. | User |
+| 2026-09-05 | Added the premium design-system, interaction-state, reference-analysis, and blocking visual-review guidance. | Documentation clarification; no feature, architecture, priority, or workflow change. | User |

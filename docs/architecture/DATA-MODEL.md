@@ -25,6 +25,8 @@ Schema ownership: Drizzle TypeScript schema plus reviewed SQL migrations
 | `order_status` | `NEW`, `PROCESSING`, `COMPLETED` |
 | `payment_status` | `PENDING`, `PAID`, `FAILED` |
 | `payment_attempt_status` | `CREATED`, `VERIFIED`, `FAILED` |
+| `order_email_kind` | `CUSTOMER_ORDER_CONFIRMATION`, `BUSINESS_NEW_ORDER_NOTIFICATION` |
+| `order_email_delivery_status` | `PENDING`, `SENT`, `FAILED` |
 | `enquiry_status` | `NEW`, `CONTACTED`, `CLOSED` |
 
 ## Tables
@@ -93,7 +95,7 @@ There is no public insert/update policy or public provisioning endpoint.
 | `payment_status` | Server-owned state, `PENDING` initially |
 | `currency` | Check constrained to `INR` |
 | `subtotal_minor`, `shipping_minor`, `total_minor` | Server-calculated snapshots |
-| `customer_name`, `email`, `phone` | Purchase-time contact snapshot |
+| `customer_name`, `email`, `phone` | Immutable purchase-time contact snapshot; `email` is required and is the later customer transactional-email address |
 | `address_line_1`, `address_line_2`, `city`, `state`, `postal_code`, `country` | India-only address snapshot; country fixed `IN` |
 | `checkout_idempotency_key` | Unique attempt key scoped to the order-creation contract |
 | `guest_access_token_hash` | Nullable SHA-256 hash of a 32-byte random immediate-confirmation token; raw token is never stored |
@@ -131,6 +133,26 @@ Checks enforce positive whole quantity and `unit_price × quantity = line_total`
 
 The signature itself and secret keys are not persisted. A transaction/conditional update makes verified payment and parent-order paid transition idempotent.
 
+### `order_email_deliveries`
+
+| Field | Notes |
+| ----- | ----- |
+| `id` | Internal UUID primary key |
+| `order_id` | Order foreign key, delete restricted |
+| `kind` | Customer confirmation or business new-order notification |
+| `status` | Pending, sent, or safely recorded failed state |
+| `provider` | Check constrained to `RESEND` for the approved F006 scope |
+| `provider_message_id` | Nullable non-secret provider reference after a send attempt |
+| `attempt_count`, `last_attempt_at`, `sent_at` | Delivery/recovery audit fields |
+| `failure_code` | Sanitized optional code; no provider payload, recipient value, or secret |
+| `created_at`, `updated_at` | Timestamps |
+
+The verified payment transaction creates at most one row per `(order_id, kind)`.
+The delivery service reads the immutable order/contact snapshots to construct the
+approved customer or business message; it does not persist a second mutable
+copy of recipient/customer/address data. Retrying a failed row reuses that
+record. A failed delivery never reverses the parent order's `PAID` state.
+
 ### `ceiling_enquiries`
 
 | Field | Notes |
@@ -150,13 +172,14 @@ No quotation, calculated price, cart, order, or payment relationship is present.
 
 ## Indexes and Access Paths
 
-- `products(publication_state, category, name)` for public browsing/filtering.
+- `products(publication_state, category)` for the F002 public browse/filter path; name sorting/search remains bounded for the initial 44-record catalogue and is revisited only with query-plan evidence.
 - Unique `products(slug)`.
 - `orders(created_at desc)`, `orders(customer_user_id, created_at desc)`, `orders(order_status, created_at desc)`, `orders(payment_status, created_at desc)`.
 - Unique `orders(public_reference)` and `orders(checkout_idempotency_key)`.
 - Search-support indexes for normalized order email/phone as needed after query-plan validation; do not log search PII.
 - `ceiling_enquiries(created_at desc)`, `ceiling_enquiries(status, created_at desc)` and unique public/idempotency references.
 - Unique provider order/payment identifiers.
+- Unique `order_email_deliveries(order_id, kind)` and an operational status index for safe retry/recovery.
 
 ## Grants and RLS
 
@@ -165,7 +188,7 @@ No quotation, calculated price, cart, order, or payment relationship is present.
 | Published products/media | Read | Read | Read/write after server admin check |
 | Unpublished products | None | None | Read/write after server admin check |
 | Orders/items | No direct access | Own rows only | Read; approved status mutation only |
-| Payments | None | No direct table access; confirmation through server | Read-only operational fields; no paid mutation |
+| Payments/email deliveries | None | No direct table access; confirmation through server | Read-only operational fields; no paid mutation or arbitrary email trigger |
 | Ceiling enquiries | No direct table access; server form only | Same as guest | Read and approved status mutation |
 | Admin registry | None | None | Server authorization lookup only |
 
@@ -178,3 +201,34 @@ RLS is enabled on every application table exposed through Supabase APIs, with gr
 - Prefer additive changes. Destructive changes require backups, explicit data migration, rollback/compensating plan, and separate approval when material.
 - Seed the authoritative 44 entries idempotently by stable slug. Seed existing catalogue records `PUBLISHED`, availability `UNSET`, and product media absent unless mapping is authoritative.
 - Never seed the current hardcoded mock names/prices as catalogue truth.
+
+## F002 Implementation Record
+
+`db/schema.ts` and `drizzle/0000_past_grim_reaper.sql` implement the first
+catalogue slice: the four product/publication/availability/media enums plus
+`products` and `product_media`, direct/ceiling price-shape checks, indexes,
+revoked direct grants, RLS, and a published-products policy. The reviewed
+migration and idempotent 44-record seed were applied and validated against the
+configured non-production Supabase project on 2026-09-05.
+
+## F003 Implementation Record
+
+`/products/[slug]` resolves one `PUBLISHED` product through the existing
+server-only Drizzle catalogue repository. The public detail presentation uses
+only the established fields and category constraints. `product_media` remains
+empty until an authoritative mapping exists; its existing path/metadata,
+position, primary-image, and media-kind model is retained for later gallery and
+video support without a detail-page redesign.
+
+## F005 Implementation Record
+
+`db/schema.ts` and `drizzle/0001_shallow_prodigy.sql` add `checkout_mode`,
+`order_status`, and `payment_status` plus additive `orders` and `order_items`
+tables. The migration records immutable order/contact/address and product-item
+snapshots, INR/India/amount/PIN/direct-category checks, a unique checkout
+idempotency key with a server-generated compatible-request fingerprint, and a
+hashed 32-byte guest access capability with expiry. RLS is enabled for both
+tables; anonymous access has no grant and authenticated direct reads are limited
+to the matching customer identity. The application uses the server-only order
+entry point and does not create payment attempts or email delivery records until
+F006.

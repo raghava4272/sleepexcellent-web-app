@@ -96,7 +96,7 @@ summary::-webkit-details-marker {
   }
 
   .icon-button {
-    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-charcoal transition-colors duration-200 hover:bg-cream hover:text-burgundy;
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-charcoal transition-all duration-200 hover:bg-cream hover:text-burgundy active:scale-95;
   }
 
   .icon-button-bordered {
@@ -108,14 +108,19 @@ summary::-webkit-details-marker {
   }
 
   .button-primary,
+  .button-secondary,
   .button-ghost-light,
   .button-light,
   .button-outline-light {
-    @apply inline-flex min-h-12 items-center gap-2 px-6 py-3.5 text-center text-[0.67rem] font-bold uppercase tracking-[0.17em] outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-4;
+    @apply inline-flex min-h-12 items-center gap-2 px-6 py-3.5 text-center text-[0.67rem] font-bold uppercase tracking-[0.17em] outline-none transition-all duration-300 active:translate-y-px focus-visible:ring-2 focus-visible:ring-offset-4;
   }
 
   .button-primary {
     @apply justify-center bg-burgundy text-white hover:bg-deep-burgundy focus-visible:ring-burgundy;
+  }
+
+  .button-secondary {
+    @apply justify-center border border-charcoal bg-transparent text-charcoal hover:border-burgundy hover:bg-cream hover:text-burgundy focus-visible:ring-burgundy;
   }
 
   .button-primary:hover svg {
@@ -161,18 +166,171 @@ summary::-webkit-details-marker {
   .footer-links a {
     @apply inline-block py-0.5 transition-colors hover:text-white;
   }
+
+  .catalogue-input {
+    @apply h-12 w-full border border-border bg-ivory px-4 text-sm text-charcoal outline-none transition-colors placeholder:text-muted focus:border-burgundy focus:ring-2 focus:ring-burgundy/15;
+  }
+
+  .filter-chip {
+    @apply inline-flex min-h-10 items-center border border-border px-3 py-2 text-[0.62rem] font-bold uppercase tracking-[0.13em] text-muted transition-colors hover:border-burgundy hover:text-burgundy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-burgundy;
+  }
+
+  .filter-chip-active {
+    @apply border-burgundy bg-burgundy text-white hover:bg-deep-burgundy hover:text-white;
+  }
+
+  .catalogue-reset {
+    @apply inline-flex min-h-10 items-center gap-2 px-2 text-[0.62rem] font-bold uppercase tracking-[0.13em] text-burgundy transition-colors hover:text-deep-burgundy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-burgundy;
+  }
+
+  .catalogue-state {
+    @apply border border-border bg-white px-6 py-16 text-center shadow-[0_12px_38px_rgba(36,35,33,0.05)] sm:px-12;
+  }
+
+  .catalogue-card {
+    @apply overflow-hidden border border-border bg-white transition-transform duration-300 hover:-translate-y-1;
+  }
+
+  .catalogue-media {
+    @apply relative h-52 overflow-hidden border-b border-border bg-cream;
+    background-image: radial-gradient(circle at 20% 25%, rgba(181, 150, 101, 0.24), transparent 36%), linear-gradient(135deg, #f6f1e9, #e7ddd0);
+  }
+
+  .catalogue-number {
+    @apply absolute bottom-2 right-4 font-serif text-8xl leading-none tracking-[-0.08em] text-burgundy/[0.09];
+  }
+
+  .detail-quantity-button {
+    @apply inline-flex h-12 w-12 items-center justify-center text-charcoal transition-colors hover:bg-cream hover:text-burgundy focus-visible:bg-cream focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-burgundy;
+  }
+
+  .cart-quantity-button {
+    @apply inline-flex h-10 w-10 items-center justify-center text-charcoal transition-colors hover:bg-cream hover:text-burgundy disabled:cursor-not-allowed disabled:opacity-35 focus-visible:bg-cream focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-burgundy;
+  }
+
+  .cart-line-fallback {
+    @apply flex h-[4.5rem] w-[4.5rem] items-center justify-center border border-burgundy/15 bg-cream font-serif text-4xl text-burgundy/60;
+    background-image: radial-gradient(circle at 25% 20%, rgba(181, 150, 101, 0.28), transparent 45%), linear-gradient(145deg, #f5eee5, #e4d7c8);
+  }
+
+  .detail-action-notice {
+    @apply mt-4 border-l-2 border-burgundy bg-cream/70 px-4 py-3 text-sm leading-6 text-muted;
+  }
+
+  .checkout-panel {
+    @apply border border-border bg-white p-5 shadow-[0_18px_55px_rgba(36,35,33,0.06)] sm:p-7 lg:p-9;
+  }
+
+  .checkout-label {
+    @apply mb-2 flex items-center justify-between gap-3 text-[0.61rem] font-bold uppercase tracking-[0.15em] text-charcoal;
+  }
+
+  .checkout-label span {
+    @apply text-[0.54rem] font-semibold normal-case tracking-normal text-muted;
+  }
+
+  .checkout-input {
+    @apply h-12 w-full rounded-none border border-border bg-ivory px-4 text-sm text-charcoal outline-none transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-muted/70 hover:border-gold focus:border-burgundy focus:bg-white focus:ring-2 focus:ring-burgundy/15;
+  }
+
+  .checkout-input[aria-invalid="true"] {
+    @apply border-burgundy bg-burgundy/[0.035];
+  }
+
+  .checkout-fallback {
+    @apply flex h-14 w-14 items-center justify-center border border-burgundy/15 bg-cream text-burgundy/60;
+    background-image: radial-gradient(circle at 25% 20%, rgba(181, 150, 101, 0.24), transparent 45%), linear-gradient(145deg, #f5eee5, #e4d7c8);
+  }
+
+  .detail-facts {
+    @apply grid divide-y divide-border border-y border-border;
+  }
+
+  .detail-facts div {
+    @apply grid gap-1 py-4 sm:grid-cols-[9rem_1fr] sm:gap-5;
+  }
+
+  .detail-facts dt {
+    @apply text-[0.62rem] font-bold uppercase tracking-[0.16em] text-muted;
+  }
+
+  .detail-facts dd {
+    @apply m-0 text-sm leading-6 text-charcoal;
+  }
+
+  .detail-media {
+    @apply relative isolate min-h-[31rem] overflow-hidden border border-border bg-cream sm:min-h-[39rem];
+  }
+
+  .detail-media-product {
+    background: linear-gradient(145deg, #f4eee4 8%, #e1d2c2 55%, #c7a99b 120%);
+  }
+
+  .detail-media-ceiling {
+    background: linear-gradient(145deg, #eae7de 5%, #cfc8b8 54%, #a9a192 120%);
+  }
+
+  .detail-media-orb {
+    @apply absolute rounded-full blur-3xl;
+  }
+
+  .detail-media-orb-one {
+    @apply -left-20 top-[9%] h-72 w-72 bg-burgundy/20;
+  }
+
+  .detail-media-orb-two {
+    @apply -bottom-24 right-[-2rem] h-80 w-80 bg-gold/35;
+  }
+
+  .detail-media-mark {
+    @apply absolute bottom-[-0.18em] right-[-0.08em] font-serif text-[clamp(12rem,29vw,28rem)] leading-none tracking-[-0.1em] text-charcoal/[0.055];
+  }
+
+  .product-gallery {
+    @apply min-w-0;
+  }
+
+  .product-gallery-stage {
+    @apply relative isolate min-h-[23rem] overflow-hidden border border-border bg-cream sm:min-h-[34rem] lg:min-h-[39rem];
+    background: linear-gradient(145deg, #f4eee4 8%, #e1d2c2 55%, #c7a99b 120%);
+  }
+
+  .product-gallery-thumbnails {
+    @apply mt-3 flex snap-x gap-3 overflow-x-auto pb-2 pr-1 sm:mt-4;
+    scrollbar-width: thin;
+  }
+
+  .product-gallery-thumb {
+    @apply relative h-[4.6rem] w-[4.6rem] shrink-0 snap-start overflow-hidden border border-border bg-cream transition-all duration-300 hover:border-burgundy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-burgundy sm:h-[5.6rem] sm:w-[5.6rem];
+  }
+
+  .product-gallery-thumb-active {
+    @apply border-burgundy ring-1 ring-burgundy/30;
+  }
 }
 
 .nav-dropdown {
   transform: translate(-50%, 0.5rem);
 }
 
+.nav-dropdown.nav-dropdown-start {
+  left: 0;
+  transform: translate(0, 0.5rem);
+}
+
 .nav-menu:hover .nav-dropdown,
-.nav-menu:focus-within .nav-dropdown {
+.nav-menu:focus-within .nav-dropdown,
+.nav-menu[open] .nav-dropdown {
   pointer-events: auto;
   visibility: visible;
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+.nav-menu:hover .nav-dropdown-start,
+.nav-menu:focus-within .nav-dropdown-start,
+.nav-menu[open] .nav-dropdown-start {
+  transform: translate(0, 0);
 }
 
 .skip-link {

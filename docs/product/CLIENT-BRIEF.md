@@ -85,16 +85,21 @@ This direction is not authorization to migrate or configure those services yet.
 - After verified payment, normal-cart checkout clears only the successfully purchased cart, while Buy Now leaves unrelated normal-cart items untouched. Cancellation or failure preserves the relevant cart/checkout state.
 - Guest order-confirmation access must use a non-guessable mechanism rather than a sequential public database ID.
 - Razorpay webhook reconciliation is P1 and non-blocking for Sunday; production release requires a production-grade webhook/reconciliation follow-up.
-- Customer authentication uses Supabase Auth with email/password signup, login, logout, and supported secure session handling. A custom token system or manual insecure token storage is not permitted.
+- Checkout requires and preserves the customer's email in the immutable order/contact snapshot for both guest and authenticated orders. Creating the unpaid order does not send paid-order email.
+- Only after server-side Razorpay verification transitions an order to `PAID`, trusted server code sends one Resend customer order confirmation and one Resend business new-order notification. A browser-reported Razorpay success never triggers these messages.
+- Customer confirmation contains the safe order reference, payment confirmation, purchased items/quantities, total, order status, and relevant delivery/contact summary. The business notification contains operational customer/contact/address, purchased-item, total, payment-status, and order-status information.
+- Transactional sender and business recipient are server-side configurable values: desired sender form is `SleepExcellent <no-reply@APPROVED_DOMAIN>` and the final sending domain plus business recipient remain **PENDING CLIENT/OWNER INPUT**. Resend credentials never reach browser code.
+- Transactional delivery is idempotent per paid order/message kind. If delivery fails after verified payment, the order remains `PAID` and the failure is recorded for recovery; no marketing, newsletter, abandoned-cart, SMS, WhatsApp, refund, shipping, or invoice email is included.
+- Customer authentication uses Supabase Auth with email/password signup, Google OAuth, login, logout, and supported secure session handling. A custom token system or manual insecure token storage is not permitted.
 - Authentication is optional for the customer journey. Homepage, catalogue, search, product detail, cart, Buy Now, checkout, Razorpay payment, and guest confirmation remain accessible without login.
-- Sunday development/demo account creation must not be blocked by external email verification. Production email verification, delivery configuration, and final authentication policy require explicit review rather than a silent weakening of production rules.
+- Email/password signup requires one supported Supabase email-confirmation flow. Verified users log in normally thereafter; unverified users see a clear resend/recovery path without duplicate account creation. Google OAuth identities are treated as verified and must not receive redundant confirmation; a first Google signup may receive an informational welcome email when delivery is configured.
 - The minimal customer account contains basic email/identity, logout, order-history access, and order detail. Complex profile, avatar, preferences, saved payments, wishlist, loyalty, saved addresses, and notification settings are excluded from the Sunday MVP.
 - An authenticated checkout order is associated with the authenticated Supabase user ID. A guest checkout remains a guest order with its immutable customer/contact snapshot.
 - Guest orders are never automatically associated with an account solely through a matching email address; guest-order claiming is deferred.
 - Customer order history displays the safe public SleepExcellent order reference, order date, payment status, order status, purchased-item summary, total, and detail action using immutable purchase snapshots.
 - Customer privacy is mandatory: Supabase identity, basic RLS, and server authorization prevent one customer from accessing another customer's profile or orders, including through changed URLs or identifiers.
 - Internal sequential database IDs cannot serve as the sole public order identifier. Public order-reference and secure guest-confirmation mechanisms await Technical Lead architecture design.
-- Password reset is P1 and cannot delay the Sunday commerce demonstration. Its route/UI may remain while email-delivery work is recorded as incomplete P1 work.
+- Authentication email uses the approved SleepExcellent no-reply sender when production delivery is configured through an approved Supabase Auth/custom SMTP path. Resend may be used if selected during implementation; the final sending domain remains **PENDING CLIENT/OWNER INPUT**. Password reset is P1 and cannot delay the Sunday commerce demonstration.
 - Admin authentication and authorization remain separate from customer account scope, though the future architecture may reuse Supabase Auth with distinct admin authorization.
 - Ceiling solutions remain enquiry/quotation only: Homepage/Catalogue/Detail → Request Quote → Enquiry Form → Stored Enquiry → Confirmation → Staff Follow-up.
 - Ceiling pages display only the authoritative indicative catalogue range per square foot. Approximate area is never multiplied into an estimated or final payable amount for the Sunday MVP.
@@ -149,8 +154,9 @@ This direction is not authorization to migrate or configure those services yet.
 - Installation charges and calculation: **PENDING CLIENT DECISION**
 - Transport charges and calculation: **PENDING CLIENT DECISION**
 - Warranty behavior: **PENDING CLIENT DECISION**
-- Production email-verification requirement and final authentication policy: **PENDING CLIENT DECISION**
-- Production authentication email-delivery configuration and branding: **PENDING CLIENT DECISION**
+- Final SleepExcellent no-reply sending domain: **PENDING CLIENT/OWNER INPUT**
+- Selected production authentication SMTP/email provider configuration (Resend permitted): **PENDING CLIENT/OWNER INPUT**
+- Final SleepExcellent transactional-email no-reply domain and business order-notification recipient: **PENDING CLIENT/OWNER INPUT**
 - Final contact-consent/privacy wording: **PENDING CLIENT DECISION**
 
 ## Missing Assets/Data

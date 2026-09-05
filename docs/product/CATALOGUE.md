@@ -85,3 +85,36 @@ Pricing unit: per square foot.
 | Glass Ceiling | Best suited for luxury homes, hotels and showrooms | ₹300–₹700+ | Per sq. ft. | Upper end is open-ended in the source. |
 
 MVP purchase rule: ceiling solutions show the indicative range per square foot and use Request Quote/Consultation. They do not enter the cart and do not calculate a final payable amount.
+
+## Client-supplied demo media mapping
+
+For the approved local client demo revision, the files in `ceiling/` and
+`mattresses/` are authoritative only under the deterministic filename rules
+below. They are mirrored unchanged under `public/media/` for local rendering;
+this is not a `product_media` database mapping and does not alter the planned
+Supabase Storage design.
+
+| Product/type | Rendered local files, in order | Notes |
+| --- | --- | --- |
+| Gypsum Ceiling | `gypsum.jpg` → `gypsum2.jpg` → `gypsum3.jpg` → `gypsum4.jpg` → `gypsum5.jpg` | Complete 1–5 gallery. |
+| POP Ceiling | `POP.jpg` → `pop2.jpg` → `POP3.jpg` → `pop4.jpg` → `pop5.jpg` | Case-normalized only. |
+| Wooden Ceiling | `wooden.jpg` → `wooden2.jpg` → `wooden3.jpg` → `wooden4.jpg` → `wooden5.jpg` | Complete 1–5 gallery. |
+| PVC Ceiling | `pvc.jpg` → `pvc3.jpg` → `pvc4.jpg` → `pvc5.jpg` | Missing slot 2 is intentionally skipped. |
+| Metal Ceiling | `metal.jpg` → `metal2.jpg` → `metal3.jpg` → `metal4.jpg` → `metal5.jpg` | Complete 1–5 gallery. |
+| Acoustic Ceiling | `acoustic.jpg` → `acoustic2.jpg` → `acoustic3.jpg` → `acoustic4.jpg` → `acoustic5.jpg` | Complete 1–5 gallery. |
+| Grid (Armstrong) Ceiling | `grid.jpg` → `grid2.jpg` → `grid3.jpg` → `grid4.jpg` → `grid5.jpg` | Complete 1–5 gallery. |
+| Glass Ceiling | `glass.jpg` → `glass2.jpg` → `glass3.jpg` → `glass4.jpg` → `glass5.jpg` | Complete 1–5 gallery. |
+| Ortho, Ortho Plus, Latex, Latex Pro, Pocketed Spring, Foam, Memory Foam, Feel Good, Shim mattresses | Each model's `<model>.jpg` → `<model> 2nd.jpg` → `<model> layers.jpg` → `<model> close.jpg` → `sleep_excellent_mattress_guide.jpg` | Missing product-specific semantic slots are skipped; the shared guide remains last. |
+| Bonnell Spring Mattress | `Bonnel Spring.jpg` → `Bonnel spring 2nd.jpg` → `Bonnel spring layers.jpg` → `Bonnel spring close.jpg` → `sleep_excellent_mattress_guide.jpg` | Explicit client-approved `Bonnel Spring` alias only; no generalized spelling/fuzzy matching. |
+| Indian Traditional, Cabin, Camel Back, Chester Model, Corner, Excellent, Fiber Back, L-Shape, Modern, U-Shape sofas | All files in the clearly corresponding `Sofas/<model>/` folder, in natural filename order. | First file is the card primary; remaining files form the detail gallery. |
+| Classic Model Headboard, Colony Model, Dream Night, Roman Model, Lifestyle, Wood Rock beds | First four files in the clearly corresponding `Beds/<model>/` folder, in natural filename order, then `sleep_excellent_mattress_guide.jpg`. | The shared guide is included once as the final fifth item. |
+| Luxury Headboard, Teak Wood, Kerala Teak, Inbuilt Plywood beds | `sleep_excellent_mattress_guide.jpg` only. | Folder names differ materially from the authoritative models, so no bed-specific media is mapped and cards retain the fallback. |
+
+Explicit approved aliases now map `head restmodel`, `italin`, `luxary`,
+`premimum`, and `rock shal` sofa folders plus `take wood`, `kerala lake`, and
+`Inbuilt plywood with deewan` bed folders to their named catalogue models.
+They are the only such aliases. The duplicate `classic model headvoard bed`
+folder remains unmapped.
+
+No product video is mapped: the supplied videos are category-generic and do not
+provide a clear product association.

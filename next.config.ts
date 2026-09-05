@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  images: {
-    unoptimized: true,
-  },
+  distDir: process.env.SLEEPEXCELLENT_DIST_DIR ?? ".next",
 };
 
 export default nextConfig;

@@ -111,7 +111,8 @@ The browser never receives the database URL, Supabase secret/service credential,
 5. Browser opens Razorpay Checkout with public key ID and server-created order details.
 6. Browser returns payment ID/order ID/signature to a server verification endpoint.
 7. Server verifies against its stored Razorpay order ID and secret, then atomically transitions payment to `PAID` once.
-8. Guest confirmation requires the public reference plus a 32-byte cryptographically random secret held in a path-scoped HttpOnly cookie. Only its SHA-256 hash is stored. The deployed cookie is `Secure`, uses `SameSite=Lax`, expires after two hours, and is compared safely; authenticated confirmation also enforces user ownership.
+8. That same verified transition creates durable, unique customer-confirmation and business-notification delivery records. Trusted server code sends them through Resend from immutable order snapshots; a delivery failure remains recoverable and never reverses `PAID`.
+9. Guest confirmation requires the public reference plus a 32-byte cryptographically random secret held in a path-scoped HttpOnly cookie. Only its SHA-256 hash is stored. The deployed cookie is `Secure`, uses `SameSite=Lax`, expires after two hours, and is compared safely; authenticated confirmation also enforces user ownership.
 
 ### Ceiling enquiry
 
@@ -130,6 +131,9 @@ The browser never receives the database URL, Supabase secret/service credential,
 ## Authentication and Authorization
 
 - Use Supabase's cookie-based SSR client for optional customer sessions; do not reuse the existing OpenAI workspace-auth header helper as ecommerce identity.
+- Email/password signup uses Supabase Auth's supported, expiring confirmation flow. A customer is not treated as verified until Supabase confirms the email; resend and invalid/expired-link recovery stay within that provider flow rather than a custom token system.
+- Google OAuth is initiated and completed through Supabase Auth. A successfully returned Google identity is treated as verified, establishes the normal customer session, and does not receive a second verification requirement.
+- Authentication email delivery uses approved Supabase Auth/custom SMTP configuration when F007 is implemented. Resend is an allowed future provider selection; SMTP/provider secrets never enter browser code, and the final SleepExcellent no-reply sender domain remains client/owner input.
 - `auth.users.id` is the customer identity referenced by orders and the server-controlled admin registry.
 - Customer order reads require `orders.customer_user_id = authenticated user ID` in both service authorization and RLS policy.
 - Guest orders have no customer user ID and use a hashed high-entropy access token for confirmation.
@@ -141,6 +145,7 @@ The browser never receives the database URL, Supabase secret/service credential,
 
 - Checkout and enquiry submissions carry unique idempotency keys enforced by database constraints.
 - Payment verification is atomic, replay-safe, and keyed to stored Razorpay identifiers and amount.
+- Paid-order email is a server-only Resend side effect of the verified `PAID` transition, with durable per-order/per-kind idempotency. Provider failure is observable/recoverable but cannot make a paid order unpaid or cause a browser-triggered send.
 - Expected validation, conflict, authorization, persistence, payment-cancel/failure, missing-media, empty, and not-found states return intentional UI states.
 - No automatic retries are performed for non-idempotent mutations without the same idempotency key.
 - P1 Razorpay webhook processing uses the raw request body, signature validation, event-ID deduplication, and monotonic payment transitions.
@@ -148,7 +153,7 @@ The browser never receives the database URL, Supabase secret/service credential,
 ## Observability
 
 - Emit structured Vercel server logs with request/correlation ID, operation, safe public reference, result class, and duration.
-- Never log passwords, Auth tokens, access cookies, Razorpay secrets/signatures, full payment payloads, or complete customer/address data.
+- Never log passwords, Auth tokens, access cookies, Razorpay secrets/signatures, Resend credentials, full payment payloads, or complete customer/address/email data.
 - Persist non-secret Razorpay order/payment references for support.
 - Sunday uses platform logs and focused test evidence; advanced monitoring/alerting remains production follow-up.
 

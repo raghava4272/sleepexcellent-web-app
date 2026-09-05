@@ -1,9 +1,9 @@
 # Implementation Plan
 
-Status: PROPOSED — awaiting explicit approval
+Status: APPROVED — F001 implementation authorized
 Owner role: TECH_LEAD
 Created: 2026-09-05
-Implementation authorized: No
+Implementation authorized: F001 only
 
 ## Phase
 
@@ -21,6 +21,38 @@ Objective: Deliver the approved SleepExcellent Sunday demonstration through depe
 - Run focused validation continuously; F011 is the final consolidated release gate, not the first time quality is checked.
 - A stage may reach user review only after its Implementation Summary and every materially affected document match the actual code and tests; update only affected records and never invent source paths.
 - No production deployment is authorized.
+
+## Cross-Cutting UI/UX Priority
+
+SleepExcellent's primary client-facing objective is a premium, high-quality ecommerce experience. Functional correctness and critical security/data integrity remain mandatory, but implementation must not optimize only for technical completion.
+
+### Design authority
+
+Use this order when making client-facing design decisions:
+
+1. The existing SleepExcellent homepage is the primary visual identity and brand baseline.
+2. Approved SleepExcellent feature specifications define required behavior and scope.
+3. `docs/product/REFERENCE-ANALYSIS.md` supplies approved ecommerce UX patterns and interaction guidance.
+4. The referenced websites are inspiration only.
+
+If the reference analysis conflicts with an approved feature specification, the feature specification wins. Do not copy reference-site branding, logo treatment, wording, product names, media, icons, proprietary content, exact layouts, or exact styling.
+
+### Experience standards
+
+- Preserve and evolve the existing premium, modern, spacious, editorial, furniture/lifestyle-focused visual language; do not redesign the homepage from scratch.
+- Maintain one coherent system for typography, colours, spacing, content width, section rhythm, border radius, cards, buttons, forms, shadows, icons, and motion across public, commerce, account, and admin surfaces.
+- Design mobile intentionally at representative mobile, tablet, laptop, and desktop widths, including navigation, grids, details, galleries, drawers, checkout, forms, tables, media crops, and sticky controls.
+- Give important controls intentional default, hover, focus, pressed, disabled, loading, success, and error states where applicable.
+- Give major journeys deliberate loading, empty, no-results, missing-media, validation, persistence, payment, and authorization states rather than framework-looking fallbacks.
+- Missing authoritative media remains non-blocking and uses a deliberate premium fallback that can later be replaced without redesign; unrelated product media is never substituted.
+- Keep the approved commerce path direct and legible: Homepage → Browse → Product → Cart/Buy Now → Checkout → Razorpay → Confirmation.
+- Consult `docs/product/REFERENCE-ANALYSIS.md` for relevant approved patterns such as category navigation, search/sort/filter treatment, product hierarchy, media/specification layout, clear commerce or quotation CTAs, cart/checkout behavior, mobile drawers, and touch-sized controls.
+
+### Client-demo trade-offs and visual gate
+
+When trade-offs are required, prioritize critical functional correctness, client-visible UI/UX quality, responsive polish, critical security/data integrity, then optional/P1 functionality. Visual polish never weakens a critical security or correctness boundary; optional backend/admin sophistication must not delay approved visible customer-facing quality.
+
+Every client-facing feature's `DEVELOPER_VALIDATION` must explicitly review visual consistency, responsive layout, spacing, typography, hierarchy, CTA visibility, interaction feedback, missing-media presentation, mobile usability, accessibility basics, appropriate use of approved reference patterns, and freedom from copied Sleepwell/Wakefit design. Obvious UI regressions block transition to `AWAITING_FEATURE_REVIEW`.
 
 ## Feature Execution Order
 
@@ -69,7 +101,7 @@ Node runtime availability; approved ADR-001. No Supabase credential is required 
 
 ### Validation
 
-Standard Next.js dev start and production build, existing homepage smoke test, browser/console/media inspection at mobile/tablet/desktop, exact `tel:`/`mailto:` verification, baseline visual comparison.
+Standard Next.js dev start and production build, existing homepage smoke test, browser/console/media inspection at mobile/tablet/laptop/desktop, exact `tel:`/`mailto:` verification, baseline visual comparison, interaction-state review, and confirmation that relevant reference-analysis patterns improve usability without copying the reference sites.
 
 ### Documentation synchronization
 
@@ -213,7 +245,7 @@ F005 — Checkout, Address and Order Creation
 2. Build shared checkout UI for normal-cart and Buy Now sources.
 3. Add shared client/server validation for approved customer/address fields and six-digit Indian PIN.
 4. Implement one server calculation service: published eligible products, positive quantities, catalogue unit prices, subtotal, server-configured shipping `0`, INR total, no tax line.
-5. Create orders/items/contact/address snapshots transactionally with a unique checkout idempotency key.
+5. Create orders/items/contact/address snapshots transactionally with a unique checkout idempotency key; require and preserve the customer email for later transactional communication without sending email from F005.
 6. Issue two-hour guest access capability using 32 random bytes, SHA-256 stored hash, and path-scoped HttpOnly/SameSite cookie settings; Secure when deployed.
 7. Add safe retries/conflict behavior and no-store checkout/confirmation handling.
 
@@ -249,27 +281,29 @@ F006 — Razorpay Test Payment and Order Confirmation
 
 ### Technical tasks
 
-1. Add payment-attempt table/constraints and migration.
+1. Add payment-attempt and durable paid-order email-delivery tracking constraints/migrations.
 2. Isolate Razorpay test adapter behind a server interface.
 3. Create Razorpay orders from persisted order totals and store unique provider order IDs.
 4. Load Standard Checkout client-side with public fields only.
-5. Implement verification Route Handler using the stored provider order ID, amount agreement, server secret, timing-safe comparison/library helper, and atomic idempotent paid transition.
+5. Implement verification Route Handler using the stored provider order ID, amount agreement, server secret, timing-safe comparison/library helper, and atomic idempotent paid transition that creates one durable customer-confirmation and business-notification delivery record per paid order.
 6. Handle invalid/mismatched/replayed/cancelled/failed flows without false paid state.
 7. Protect authenticated or immediate guest confirmation; never authorize by public/internal ID alone.
 8. Reconcile normal cart by purchased quantities after verified success; preserve normal cart after Buy Now.
-9. Leave webhook endpoint/processing explicitly P1 unless separately selected.
+9. Dispatch queued paid-order notifications from trusted server code through Resend only after the verified `PAID` transition. Delivery failure is recorded for recovery and never rolls back the order/payment; retries reuse the existing delivery record rather than creating duplicates.
+10. Keep the no-reply sender and business recipient server-side, environment-configured values; no email-provider credential or recipient is hardcoded in browser code.
+11. Leave webhook endpoint/processing explicitly P1 unless separately selected.
 
 ### Likely code areas
 
-Payment schema/migration, `lib/payments/razorpay/`, verification Route Handler, checkout launcher, confirmation route, cart reconciliation, integration/unit/E2E tests.
+Payment and email-delivery schema/migration, `lib/payments/razorpay/`, server-only Resend adapter/delivery service, verification Route Handler, checkout launcher, confirmation route, cart reconciliation, integration/unit/E2E tests.
 
 ### Dependencies
 
-F005 and Razorpay test key ID/secret. Missing test credentials block live test-mode E2E but not deterministic adapter/signature tests.
+F005, Razorpay test key ID/secret, and server-only Resend credentials plus configurable sender/recipient. Missing credentials block live E2E delivery but not deterministic adapter/signature/delivery-state tests.
 
 ### Validation
 
-Valid/invalid/mismatch/replay signature tests, transaction/idempotency tests, secret-exposure scan, test-mode browser payment/cancel/failure runs, confirmation authorization, cart-mode reconciliation.
+Valid/invalid/mismatch/replay signature tests; paid-transition/email-delivery idempotency and failure-recovery tests; secret-exposure scan; test-mode browser payment/cancel/failure runs; confirmation authorization; cart-mode reconciliation.
 
 ### Documentation synchronization
 
@@ -454,8 +488,9 @@ F007 and recorded P1 slices of F002/F003/F006/F009/F011.
 
 ### Technical tasks
 
-- F007 core order: signup/login/logout, session, minimal account, authenticated order association, order history/detail, then password reset.
-- Optional only if explicitly selected by schedule: price-range filter, related products, webhook reconciliation, gallery/video admin, advanced admin polish/media optimization, production email work.
+- F007 core order: supported Supabase email/password signup verification and resend, email/password login/logout, Google OAuth sign-in, session, minimal account, authenticated order association, order history/detail, then password reset.
+- Before F007 implementation, configure the approved Supabase confirmation/OAuth redirects and an approved SMTP delivery path. Resend may be selected as custom SMTP/email provider; final no-reply domain remains client/owner input and provider credentials remain server/provider configuration only.
+- Optional only if explicitly selected by schedule: price-range filter, related products, webhook reconciliation, gallery/video admin, advanced admin polish/media optimization, and further production email work beyond the approved F007 auth flows.
 - Any included P1 slice receives its own feature-state validation/review and all applicable security tests.
 
 ### Likely code areas
@@ -464,7 +499,7 @@ Customer Auth/account routes and services, optional feature-specific modules, as
 
 ### Dependencies
 
-Stable P0, Supabase Auth foundation, explicit selection of the P1 slice, any required email/provider configuration.
+Stable P0, Supabase Auth foundation, explicit selection of the P1 slice, enabled Google OAuth, approved Supabase confirmation redirect/custom SMTP configuration, and final no-reply sending-domain input.
 
 ### Validation
 
@@ -485,7 +520,7 @@ P1 work never changes Sunday P0 acceptance retroactively. Each implemented slice
 | M001 | F002 | PostgreSQL enums, `products`, `product_media`, constraints/indexes/grants/RLS | Initial additive migration; rollback drops only empty/new structures in non-production |
 | Seed 001 | F002 | Idempotent 44-record authoritative catalogue seed | Stable slug upsert; no deletion, stock, invented fields, or media assignment |
 | M002 | F005 | `orders`, `order_items`, constraints/indexes/grants/RLS | Additive; transaction tests; no destructive rollback after orders exist |
-| M003 | F006 | `payment_attempts`, provider uniqueness and state constraints | Additive; payment transitions protected; compensating migration if changed |
+| M003 | F006 | `payment_attempts`, durable `order_email_deliveries`, provider uniqueness and state constraints | Additive; verified paid transition and per-message delivery idempotency protected; compensating migration if changed |
 | M004 | F008 | `ceiling_enquiries`, idempotency/public-reference/status constraints | Additive and separate from commerce |
 | M005 | F009 | `admin_users`, admin access policies/functions as required | Additive; no public grants; admin identity provisioned separately |
 
@@ -511,11 +546,12 @@ Every generated SQL migration is reviewed before application. Shared Preview/Pro
 | Unit | Money, validation, category rules, state transitions, references/tokens, cart reconciliation |
 | Database integration | Constraints, transactions, idempotency, publication, snapshots, indexes, grants/RLS |
 | Authorization integration | Customer ownership, guest capability, admin isolation, direct endpoint denial |
-| Payment integration | Valid/invalid/mismatched/replayed verification, amount agreement, atomic paid state |
+| Payment/email integration | Valid/invalid/mismatched/replayed verification, amount agreement, atomic paid state, customer/business delivery idempotency, and failure-without-payment-rollback |
 | Browser/Playwright | Mandatory public, ceiling, and admin journeys; cancellation/failure/recovery |
 | Accessibility/manual | Keyboard, focus, labels/errors, dialogs/drawers, reduced motion, contrast sanity |
 | Responsive/manual | Mobile, tablet, laptop, desktop; overflow/crop/sticky/table/form behavior |
 | Preview | Environment label/isolation, console/network/media, critical journey smoke |
+| Visual/interaction | SleepExcellent design consistency, hierarchy, spacing, typography, CTA visibility, state feedback, missing-media treatment, reference-pattern fit, accessibility basics, and intentional mobile/tablet/laptop/desktop behavior |
 
 ## Documentation Plan
 
@@ -570,13 +606,13 @@ Dropping these does not permit incomplete work to be marked complete and does no
 
 ## Implementation Status
 
-Status: NOT STARTED — plan awaiting explicit approval.
+Status: F004 FEATURE COMPLETE — independent acceptance testing passed. F005 implementation, migration, server-authoritative order validation, RLS/grant validation, tests, and typecheck are complete; local browser/lint/build completion remains the developer-validation gate. The separately approved F002/F003/homepage client-media presentation revision adds a temporary local ceiling/mattress media resolver and partner section without changing F005 behavior or state.
 
 ## Current Feature
 
-Feature ID: None
-Specification: None
-State: `IMPLEMENTATION_PLANNING`
+Feature ID: F005
+Specification: `features/F005-checkout-address-order-creation.md`
+State: `DEVELOPER_VALIDATION`
 
 ## Blocked Features
 
@@ -588,3 +624,5 @@ State: `IMPLEMENTATION_PLANNING`
 
 | Feature ID | QA Evidence | Completion Date |
 | ---------- | ----------- | --------------- |
+| F001 | `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, and independent production browser acceptance checks passed. | 2026-09-05 |
+| F004 | `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, and independent desktop/mobile cart acceptance checks passed. | 2026-09-05 |

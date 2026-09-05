@@ -6,7 +6,7 @@ Initial product discovery and feature definition.
 
 ## Status
 
-Status: PLANNING
+Status: IN PROGRESS
 Start Date: 2026-09-05
 Completion Date: Pending
 
@@ -30,11 +30,17 @@ Completion Date: Pending
 
 | Feature ID | QA Evidence | Completion Date |
 | ---------- | ----------- | --------------- |
+| F001 | [F001 QA Testing](../features/F001-homepage-global-navigation.md#qa-testing): typecheck, lint, regression tests, production build, and desktop/tablet/mobile browser acceptance checks passed. | 2026-09-05 |
+| F002 | Independent QA passed live non-production Supabase data/RLS/grant checks, repeat `npm run db:seed`, desktop/mobile browser journeys, and the full regression/typecheck/lint/build suite. | 2026-09-05 |
+| F003 | Independent QA passed persisted catalogue/detail-route checks, direct/ceiling CTA matrix, desktop/mobile/tablet review, accessibility/reduced-motion source checks, and the full regression/typecheck/lint/build suite. | 2026-09-05 |
+| F004 | Independent QA passed cart slug/quantity persistence, current direct-product display refresh, Buy Now isolation, ceiling exclusion, responsive/accessibility/reduced-motion checks, and the full regression/typecheck/lint/build suite. | 2026-09-05 |
 
 ## Active Feature
 
-Feature ID: None
-State: None
+Feature ID: F004
+State: FEATURE_COMPLETE
+
+F001–F004 are complete. F005 is the prepared next feature and remains unstarted.
 
 ## Phase-Level Decisions
 
