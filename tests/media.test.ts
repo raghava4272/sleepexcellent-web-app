@@ -75,7 +75,7 @@ test("confident sofa folders supply ordered primary and gallery media only for t
   assert.equal(getProductPrimaryMedia(product("Italian Model Sofa", "SOFA"))?.src, "/media/sofas/italian-model-sofa/Gemini_Generated_Image___72_.png");
 });
 
-test("every bed ends with one shared guide and only mapped folders get a primary card image", () => {
+test("every bed ends with one shared guide and approved mapped folders get a primary card image", () => {
   const classic = product("Classic Model Headboard Bed", "BED");
   const classicMedia = getProductMedia(classic);
   assert.equal(classicMedia.length, 5);
@@ -83,6 +83,12 @@ test("every bed ends with one shared guide and only mapped folders get a primary
   assert.equal(getProductPrimaryMedia(classic)?.src, "/media/beds/classic-model-headboard-bed/back_view.png");
 
   const teak = product("Teak Wood Bed", "BED");
-  assert.deepEqual(getProductMedia(teak).map((media) => media.src), ["/media/mattresses/sleep_excellent_mattress_guide.jpg"]);
-  assert.equal(getProductPrimaryMedia(teak), null);
+  assert.deepEqual(getProductMedia(teak).map((media) => media.src), [
+    "/media/beds/teak-wood-bed/Gemini_Generated_Image_%20(97).png",
+    "/media/beds/teak-wood-bed/Gemini_Generated_Image_%20(98).png",
+    "/media/beds/teak-wood-bed/Gemini_Generated_Image_1tsa041tsa041tsa%20(1).png",
+    "/media/beds/teak-wood-bed/Gemini_Generated_Image_6vl5xg6vl5xg6vl5.png",
+    "/media/mattresses/sleep_excellent_mattress_guide.jpg",
+  ]);
+  assert.equal(getProductPrimaryMedia(teak)?.src, "/media/beds/teak-wood-bed/Gemini_Generated_Image_%20(97).png");
 });
