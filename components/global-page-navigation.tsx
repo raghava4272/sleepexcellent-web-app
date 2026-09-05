@@ -19,8 +19,9 @@ export function GlobalPageNavigation() {
   if (pathname === "/") return null;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/80 bg-ivory/95 backdrop-blur-md">
-      <div className="mx-auto flex h-[72px] max-w-site items-center justify-between gap-4 px-page sm:h-[80px]">
+    <>
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/80 bg-ivory/95 backdrop-blur-md">
+        <div className="mx-auto flex h-[72px] max-w-site items-center justify-between gap-4 px-page sm:h-[80px]">
         <Link
           href="/"
           className="inline-flex shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-burgundy focus-visible:ring-offset-4"
@@ -57,7 +58,9 @@ export function GlobalPageNavigation() {
             <ShoppingBag size={18} strokeWidth={1.6} />
           </Link>
         </div>
-      </div>
-    </header>
+        </div>
+      </header>
+      <div aria-hidden="true" className="h-[72px] sm:h-[80px]" />
+    </>
   );
 }

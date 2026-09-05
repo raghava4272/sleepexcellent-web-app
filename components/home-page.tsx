@@ -421,7 +421,7 @@ function SiteHeader({
   return (
     <>
       <header
-        className={`sticky top-0 z-50 border-b border-border/80 bg-ivory/95 backdrop-blur-md transition-all duration-300 ${
+        className={`fixed inset-x-0 top-0 z-50 border-b border-border/80 bg-ivory/95 backdrop-blur-md transition-all duration-300 ${
           scrolled ? "shadow-[0_8px_30px_rgba(36,35,33,0.07)]" : ""
         }`}
       >
@@ -579,6 +579,7 @@ function SiteHeader({
           </div>
         </div>
       </header>
+      <div aria-hidden="true" className="h-[76px] lg:h-[92px]" />
 
       <AnimatePresence>
         {menuOpen && (
