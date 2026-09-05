@@ -765,6 +765,7 @@ function HeroSection() {
           className="object-cover object-[61%_center] sm:object-[58%_center] lg:object-center"
         />
         {!reduceMotion && (
+          <>
           <video
             ref={firstHeroVideoRef}
             autoPlay
@@ -800,6 +801,7 @@ function HeroSection() {
             Your browser does not support this background video. The supplied
             image remains available as a fallback.
           </video>
+          </>
         )}
       </div>
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,22,20,0.86)_0%,rgba(24,22,20,0.66)_42%,rgba(24,22,20,0.12)_78%)] max-sm:bg-[linear-gradient(90deg,rgba(24,22,20,0.83)_0%,rgba(24,22,20,0.6)_70%,rgba(24,22,20,0.28)_100%)]" />
