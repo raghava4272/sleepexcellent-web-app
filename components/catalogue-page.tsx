@@ -34,21 +34,7 @@ export function CataloguePage({ products, source, error, activeCategory, activeS
 
   return (
     <main id="main-content" className="min-h-screen bg-ivory pb-24">
-      <section className="border-b border-border bg-cream/70 px-page pb-12 pt-14 sm:pb-16 sm:pt-20">
-        <div className="mx-auto max-w-container-site">
-          <Link href="/" className="text-link mb-8">
-            Back to SleepExcellent <ArrowRight size={15} aria-hidden="true" />
-          </Link>
-          <p className="mb-4 text-[0.67rem] font-bold uppercase tracking-[0.22em] text-burgundy">The SleepExcellent catalogue</p>
-          <h1 className="max-w-3xl font-serif text-[clamp(3.2rem,7vw,6.5rem)] leading-[0.9] tracking-[-0.045em] text-charcoal">
-            Find the piece that completes your room.
-          </h1>
-          <p className="mt-6 max-w-2xl text-base leading-8 text-muted sm:text-lg">
-            Browse the currently supplied models across mattresses, sofas, beds and ceiling solutions. Product media is added only when its catalogue mapping is confirmed.
-          </p>
-        </div>
-      </section>
-
+      <h1 className="sr-only">SleepExcellent catalogue</h1>
       <section aria-labelledby="catalogue-controls" className="px-page pt-8 sm:pt-10">
         <div className="mx-auto max-w-container-site">
           <h2 id="catalogue-controls" className="sr-only">Catalogue controls</h2>
