@@ -47,8 +47,10 @@ test("approved homepage media and video fallbacks remain available", () => {
     "public/photos/padding beds.jpeg",
     "public/photos/interior.jpeg",
     "public/videos/mattress.mp4",
+    "public/videos/homepagevid.mp4",
     "public/videos/sofa.mp4",
     "public/videos/bed.mp4",
+    "public/brand/logo.png",
   ];
 
   for (const asset of assets) {
@@ -61,6 +63,8 @@ test("approved homepage media and video fallbacks remain available", () => {
   assert.match(source, /loop/);
   assert.match(source, /playsInline/);
   assert.match(source, /poster=/);
+  assert.match(source, /homepageVideo/);
+  assert.match(source, /\/brand\/logo\.png/);
 });
 
 test("homepage displays both supplied partner images without creating biography copy", () => {
@@ -81,7 +85,7 @@ test("homepage displays both supplied partner images without creating biography 
 test("the standard Next.js runtime is the only configured application runtime", () => {
   const packageJson = JSON.parse(read("package.json"));
 
-  assert.equal(packageJson.scripts.dev, "next dev");
+  assert.equal(packageJson.scripts.dev, "next dev --webpack");
   assert.equal(packageJson.scripts.build, "next build --webpack");
   assert.equal(packageJson.scripts.start, "next start");
 

@@ -16,6 +16,7 @@ export const media = {
   bed: "/photos/padding beds.jpeg",
   interior: "/photos/interior.jpeg",
   mattressVideo: "/videos/mattress.mp4",
+  homepageVideo: "/videos/homepagevid.mp4",
   sofaVideo: "/videos/sofa.mp4",
   bedVideo: "/videos/bed.mp4",
 } as const;

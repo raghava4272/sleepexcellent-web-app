@@ -60,30 +60,16 @@ function Logo({ light = false }: { light?: boolean }) {
   return (
     <a
       href="#top"
-      className="group inline-flex shrink-0 flex-col leading-none outline-none focus-visible:ring-2 focus-visible:ring-burgundy focus-visible:ring-offset-4"
+      className="group inline-flex shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-burgundy focus-visible:ring-offset-4"
       aria-label="SleepExcellent home"
     >
-      <span
-        className={`font-serif text-[1.8rem] italic tracking-[-0.045em] sm:text-[2.12rem] ${
-          light ? "text-ivory" : "text-charcoal"
-        }`}
-      >
-        Sleep <span className="font-semibold text-burgundy">EX</span>
-        <span>cellent</span>
-      </span>
-      <span
-        className={`mt-1 flex items-center gap-2 text-[0.43rem] font-semibold tracking-[0.3em] ${
-          light ? "text-stone-400" : "text-muted"
-        }`}
-      >
-        <i
-          aria-hidden="true"
-          className={`h-px w-5 ${light ? "bg-stone-600" : "bg-border"}`}
-        />
-        MATTRESSES &amp; INTERIORS
-        <i
-          aria-hidden="true"
-          className={`h-px w-5 ${light ? "bg-stone-600" : "bg-border"}`}
+      <span className={`relative block h-10 w-48 overflow-hidden sm:h-12 sm:w-56 ${light ? "bg-white" : "bg-white/90"}`}>
+        <Image
+          src="/brand/logo.png"
+          alt="SleepExcellent"
+          width={941}
+          height={1672}
+          className="absolute left-0 top-1/2 h-auto w-full -translate-y-[51%]"
         />
       </span>
     </a>
@@ -734,7 +720,8 @@ function SiteHeader({
 function HeroSection() {
   const reduceMotion = useReducedMotion();
   const [heroSlide, setHeroSlide] = useState(0);
-  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const firstHeroVideoRef = useRef<HTMLVideoElement>(null);
+  const secondHeroVideoRef = useRef<HTMLVideoElement>(null);
   const activeHeroSlide = reduceMotion ? 1 : heroSlide;
 
   useEffect(() => {
@@ -746,15 +733,20 @@ function HeroSection() {
   }, [heroSlide, reduceMotion]);
 
   useEffect(() => {
-    const video = heroVideoRef.current;
-    if (!video) return;
-
-    if (activeHeroSlide === 0) {
-      void video.play().catch(() => {
-        // The mattress poster remains visible if autoplay is unavailable.
-      });
-    } else {
-      video.pause();
+    const videos = [firstHeroVideoRef.current, secondHeroVideoRef.current];
+    const activeVideo = videos[activeHeroSlide];
+    videos.forEach((video, index) => {
+      if (!video) return;
+      if (index === activeHeroSlide) {
+        void video.play().catch(() => {
+          // The supplied poster remains visible if autoplay is unavailable.
+        });
+      } else {
+        video.pause();
+      }
+    });
+    if (!activeVideo) {
+      return;
     }
   }, [activeHeroSlide]);
 
@@ -774,7 +766,7 @@ function HeroSection() {
         />
         {!reduceMotion && (
           <video
-            ref={heroVideoRef}
+            ref={firstHeroVideoRef}
             autoPlay
             muted
             loop
@@ -789,6 +781,23 @@ function HeroSection() {
           >
             <source src={media.mattressVideo} type="video/mp4" />
             Your browser does not support this background video. The mattress
+            image remains available as a fallback.
+          </video>
+          <video
+            ref={secondHeroVideoRef}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={media.mattress}
+            aria-hidden="true"
+            tabIndex={-1}
+            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ${
+              activeHeroSlide === 1 ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <source src={media.homepageVideo} type="video/mp4" />
+            Your browser does not support this background video. The supplied
             image remains available as a fallback.
           </video>
         )}
