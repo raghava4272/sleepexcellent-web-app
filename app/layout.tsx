@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CartProvider } from "@/components/cart-provider";
+import { GlobalPageNavigation } from "@/components/global-page-navigation";
 import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/600.css";
@@ -47,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body><CartProvider>{children}</CartProvider></body>
+      <body><CartProvider><GlobalPageNavigation />{children}</CartProvider></body>
     </html>
   );
 }

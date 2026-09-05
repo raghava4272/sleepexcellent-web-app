@@ -59,7 +59,7 @@ const navItems = [
 function Logo({ light = false }: { light?: boolean }) {
   return (
     <a
-      href="#top"
+      href="/"
       className="group inline-flex shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-burgundy focus-visible:ring-offset-4"
       aria-label="SleepExcellent home"
     >
