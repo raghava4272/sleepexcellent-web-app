@@ -15,7 +15,7 @@ test("the homepage uses confirmed contact destinations and no dead hash links", 
   assert.doesNotMatch(source, /href=["']#["']/);
 });
 
-test("homepage search uses the authoritative catalogue suggestion route and catalogue results", () => {
+test("homepage search uses authoritative suggestions and opens the selected product", () => {
   const source = read("components/home-page.tsx");
   const suggestionRoute = read("app/api/catalogue/suggestions/route.ts");
   const catalogueRepository = read("lib/catalogue/repository.ts");
@@ -24,6 +24,7 @@ test("homepage search uses the authoritative catalogue suggestion route and cata
   assert.match(source, /action="\/catalogue"/);
   assert.match(source, /Search catalogue/);
   assert.match(source, /role="listbox"/);
+  assert.match(source, /href=\{`\/products\/\$\{suggestion\.slug\}`\}/);
   assert.match(suggestionRoute, /readPersistedCatalogueSuggestions/);
   assert.match(catalogueRepository, /export async function readPersistedCatalogueSuggestions/);
   assert.match(catalogueRepository, /eq\(products\.publicationState, "PUBLISHED"\)/);

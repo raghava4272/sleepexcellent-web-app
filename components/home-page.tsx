@@ -317,7 +317,7 @@ function UtilityDialog({
                   <ul aria-label="Matching catalogue models" className="mt-4 divide-y divide-border border border-border bg-white" role="listbox">
                     {suggestions.map((suggestion) => (
                       <li key={suggestion.slug} role="option" aria-selected="false">
-                        <a href={`/catalogue?q=${encodeURIComponent(suggestion.name)}`} onClick={onClose} className="flex min-h-12 items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-cream focus-visible:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-burgundy">
+                        <a href={`/products/${suggestion.slug}`} onClick={onClose} className="flex min-h-12 items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-cream focus-visible:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-burgundy">
                           <span className="font-medium text-charcoal">{suggestion.name}</span>
                           <span className="shrink-0 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-burgundy">{suggestion.category}</span>
                         </a>
