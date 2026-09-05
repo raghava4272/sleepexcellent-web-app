@@ -99,7 +99,7 @@ const mattressGuide = "sleep_excellent_mattress_guide.jpg";
 // Paths are explicit so normalisation never guesses a product association.
 const directProductFiles: Partial<Record<string, readonly string[]>> = {
   "indian-traditional-sofa": ["Gemini_Generated_Image___60_.png", "Gemini_Generated_Image___61_.png", "Gemini_Generated_Image___62_.png", "Gemini_Generated_Image___63_.png", "Gemini_Generated_Image___64_.png", "Gemini_Generated_Image___65_.png"],
-  "cabin-sofa": ["back_view.png", "detail_cushion_close.png", "front_view_1.png", "front_view_2.png", "side_view.png"],
+  "cabin-sofa": ["cabin sofa1.png", "cabin sofa2.png", "cabin sofa3.png", "cabin sofa4.png", "cabin sofa5.png"],
   "camel-back-sofa": ["Gemini_Generated_Image___91_.png", "Gemini_Generated_Image___92_.png", "Gemini_Generated_Image___93_.png", "Gemini_Generated_Image___94_.png", "Gemini_Generated_Image___95_.png", "Gemini_Generated_Image___96_.png"],
   "chester-model-sofa": ["Gemini_Generated_Image___79_.png", "Gemini_Generated_Image___80_.png", "Gemini_Generated_Image___81_.png", "Gemini_Generated_Image___82_.png", "Gemini_Generated_Image___83_.png", "Gemini_Generated_Image___84_.png"],
   "corner-sofa": ["back_view.png", "detail_cushion_corner.png", "front_view_1.png", "front_view_2.png", "side_view.png"],
@@ -115,7 +115,7 @@ const directProductFiles: Partial<Record<string, readonly string[]>> = {
   "headrest-model-sofa": ["Gemini_Generated_Image___66_.png", "Gemini_Generated_Image___67_.png", "Gemini_Generated_Image___68_.png", "Gemini_Generated_Image___69_.png", "Gemini_Generated_Image___70_.png", "Gemini_Generated_Image___71_.png"],
   "classic-model-headboard-bed": ["back_view.png", "detail_tufting.png", "front_view_1.png", "front_view_2.png"],
   "colony-model-bed": ["Gemini_Generated_Image_9t76g9t76g9t76g9.png", "Gemini_Generated_Image_qnka23qnka23qnka.png", "Gemini_Generated_Image__-_2026-09-05T171814_570.png", "Gemini_Generated_Image__-_2026-09-05T171835_084.png"],
-  "dream-night-bed": ["Gemini_Generated_Image_ - 2026-09-05T171710.899.png", "Gemini_Generated_Image_ - 2026-09-05T171721.500.png", "Gemini_Generated_Image_ - 2026-09-05T171729.454.png", "Gemini_Generated_Image_ - 2026-09-05T171737.799.png"],
+  "dream-night-bed": ["Dream night bed1.png", "Dream night bed2.png", "Dream night bed3.png", "Dream night bed4.png"],
   "roman-model-bed": ["Gemini_Generated_Image_ - 2026-09-05T171620.668.png", "Gemini_Generated_Image_ - 2026-09-05T171627.136.png", "Gemini_Generated_Image_ - 2026-09-05T171634.917.png", "Gemini_Generated_Image_ - 2026-09-05T171641.959.png"],
   "lifestyle-bed": ["Gemini_Generated_Image__-_2026-09-05T172112_230.png", "Gemini_Generated_Image__-_2026-09-05T172119_630.png", "Gemini_Generated_Image__-_2026-09-05T172127_529.png", "Gemini_Generated_Image__-_2026-09-05T172136_513.png"],
   "wood-rock-bed": ["Gemini_Generated_Image_gwrlbhgwrlbhgwrl.png", "Gemini_Generated_Image__-_2026-09-05T171900_457.png", "Gemini_Generated_Image__-_2026-09-05T171945_967.png", "Gemini_Generated_Image__-_2026-09-05T171956_704.png"],

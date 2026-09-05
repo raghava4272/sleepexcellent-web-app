@@ -73,6 +73,13 @@ test("confident sofa folders supply ordered primary and gallery media only for t
   ]);
   assert.equal(getProductPrimaryMedia(lShape)?.src, "/media/sofas/l-shape-sofa/Gemini_Generated_Image_ddy3r4ddy3r4ddy3.png");
   assert.equal(getProductPrimaryMedia(product("Italian Model Sofa", "SOFA"))?.src, "/media/sofas/italian-model-sofa/Gemini_Generated_Image___72_.png");
+  assert.deepEqual(getProductMedia(product("Cabin Sofa", "SOFA")).map((media) => media.src), [
+    "/media/sofas/cabin-sofa/cabin%20sofa1.png",
+    "/media/sofas/cabin-sofa/cabin%20sofa2.png",
+    "/media/sofas/cabin-sofa/cabin%20sofa3.png",
+    "/media/sofas/cabin-sofa/cabin%20sofa4.png",
+    "/media/sofas/cabin-sofa/cabin%20sofa5.png",
+  ]);
 });
 
 test("every bed ends with one shared guide and approved mapped folders get a primary card image", () => {
@@ -91,4 +98,13 @@ test("every bed ends with one shared guide and approved mapped folders get a pri
     "/media/mattresses/sleep_excellent_mattress_guide.jpg",
   ]);
   assert.equal(getProductPrimaryMedia(teak)?.src, "/media/beds/teak-wood-bed/Gemini_Generated_Image_%20(97).png");
+
+  const dreamNight = product("Dream Night Bed", "BED");
+  assert.deepEqual(getProductMedia(dreamNight).map((media) => media.src), [
+    "/media/beds/dream-night-bed/Dream%20night%20bed1.png",
+    "/media/beds/dream-night-bed/Dream%20night%20bed2.png",
+    "/media/beds/dream-night-bed/Dream%20night%20bed3.png",
+    "/media/beds/dream-night-bed/Dream%20night%20bed4.png",
+    "/media/mattresses/sleep_excellent_mattress_guide.jpg",
+  ]);
 });
